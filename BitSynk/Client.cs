@@ -1,4 +1,5 @@
 ﻿using BitSynk.Helpers;
+using BitSynk.ViewModels;
 using DatabaseManager;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
@@ -111,8 +112,10 @@ namespace BitSynk {
             engine.DhtEngine.Start(nodes);
         }
 
-        private async void StartEngineUsingTorrents(TorrentSettings torrentDefaults) {
+        private void StartEngineUsingTorrents(TorrentSettings torrentDefaults) {
             Torrent torrent = null;
+
+            FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
 
             BEncodedDictionary fastResume = GetFastResumeFile();
 
@@ -129,6 +132,8 @@ namespace BitSynk {
                         Console.WriteLine(e.Message);
                         continue;
                     }
+
+                    fileTrackerVM.AddFileToDatabase(file, torrent.InfoHash.ToString());
 
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.

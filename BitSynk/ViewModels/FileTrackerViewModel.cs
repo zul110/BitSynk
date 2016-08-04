@@ -30,8 +30,8 @@ namespace BitSynk.ViewModels {
             if(!Directory.Exists(Settings.FILES_DIRECTORY)) {
                 Directory.CreateDirectory(Settings.FILES_DIRECTORY);
             }
-            CheckForNewFiles();
-            //timer.Start();
+            
+            timer.Start();
         }
 
         private void Timer_Tick(object sender, EventArgs e) {
@@ -54,7 +54,7 @@ namespace BitSynk.ViewModels {
             }
         }
 
-        private async void AddFileToDatabase(string file, string hash) {
+        public async void AddFileToDatabase(string file, string hash) {
             try {
                 FileManager fileManager = new FileManager();
 
