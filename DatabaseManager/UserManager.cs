@@ -15,7 +15,7 @@ namespace DatabaseManager {
 
                 MySqlCommand insertCommand = new MySqlCommand("INSERT INTO USERS (USER_ID) VALUES (@userId)", connection);
                 insertCommand.Parameters.AddWithValue("@userId", userId);
-                //insertCommand.Parameters.AddWithValue("@userName", userName);
+                insertCommand.Parameters.AddWithValue("@userName", Guid.NewGuid().ToString());
                 //insertCommand.Parameters.AddWithValue("@userPassword", userPassword);
                 //insertCommand.Parameters.AddWithValue("@userEmail", userEmail);
 

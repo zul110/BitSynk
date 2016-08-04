@@ -40,7 +40,7 @@ namespace BitSynk.ViewModels {
                 
                 if(user != null) {
                     if((user.UserEmail == null || user.UserEmail == "") && (user.UserPassword == null || user.UserPassword == "")) {
-                        await userManager.UpdateUser(Settings.USER_ID, "", userPassword, userEmail);
+                        await userManager.UpdateUser(Settings.USER_ID, Guid.NewGuid().ToString(), userPassword, userEmail);
 
                         IsLoggedIn = true;
 
@@ -51,7 +51,7 @@ namespace BitSynk.ViewModels {
                         throw new Exception("User exists. Please log in with your email and password to continue.");
                     }
                 } else {
-                    await userManager.AddUserAsync(Settings.USER_ID, "", userPassword, userEmail);
+                    await userManager.AddUserAsync(Settings.USER_ID, Guid.NewGuid().ToString(), userPassword, userEmail);
 
                     IsLoggedIn = true;
 
