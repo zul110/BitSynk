@@ -1,22 +1,54 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace BitSynk.Helpers {
     public static class Settings {
+        private static string BASE_PATH = Environment.CurrentDirectory;
+
         public static string USER_ID;
         public static string USER_EMAIL;
+
         public static string DEVICE_ID;
         public static string DEVICE_NAME;
 
+        public static string FILES_DIRECTORY_NAME;
+        public static string FILES_DIRECTORY;
+
+        public static string DOWNLOADS_DIRECTORY_NAME;
+        public static string DOWNLOADS_DIRECTORY;
+
         public static void Bootstrap() {
+            SetupDirectories();
+
             InitUserId();
 
             InitDeviceId();
 
             InitDeviceName();
+        }
+
+        private static void SetupDirectories() {
+            FILES_DIRECTORY_NAME = GetValue(Constants.FILES_DIRECTORY_NAME);
+            DOWNLOADS_DIRECTORY_NAME = GetValue(Constants.DOWNLOADS_DIRECTORY_NAME);
+
+            if(FILES_DIRECTORY_NAME == null || FILES_DIRECTORY_NAME == "") {
+                FILES_DIRECTORY_NAME = Constants.DEFAULT_FILES_DIRECTORY_NAME;
+
+                SetValue(Constants.FILES_DIRECTORY_NAME, FILES_DIRECTORY_NAME);
+            }
+
+            if(DOWNLOADS_DIRECTORY_NAME == null || DOWNLOADS_DIRECTORY_NAME == "") {
+                DOWNLOADS_DIRECTORY_NAME = Constants.DEFAULT_DOWNLOADS_DIRECTORY_NAME;
+
+                SetValue(Constants.DOWNLOADS_DIRECTORY_NAME, DOWNLOADS_DIRECTORY_NAME);
+            }
+
+            FILES_DIRECTORY = Path.Combine(BASE_PATH, FILES_DIRECTORY_NAME);
+            DOWNLOADS_DIRECTORY = Path.Combine(BASE_PATH, DOWNLOADS_DIRECTORY_NAME);
         }
 
         private static void InitDeviceName() {

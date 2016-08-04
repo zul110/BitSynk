@@ -1,4 +1,5 @@
 ﻿using BitSynk.Helpers;
+using BitSynk.ViewModels;
 using DatabaseManager;
 using DatabaseManager.Models;
 using System;
@@ -26,6 +27,8 @@ namespace BitSynk {
 
         public async void InitBootstrap() {
             Settings.Bootstrap();
+
+            FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
 
             await InitUserInfoAsync();
 

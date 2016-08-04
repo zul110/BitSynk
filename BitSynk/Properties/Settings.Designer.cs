@@ -58,5 +58,29 @@ namespace BitSynk.Properties {
                 this["DEVICE_NAME"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string FILES_DIRECTORY_NAME {
+            get {
+                return ((string)(this["FILES_DIRECTORY_NAME"]));
+            }
+            set {
+                this["FILES_DIRECTORY_NAME"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string DOWNLOADS_DIRECTORY_NAME {
+            get {
+                return ((string)(this["DOWNLOADS_DIRECTORY_NAME"]));
+            }
+            set {
+                this["DOWNLOADS_DIRECTORY_NAME"] = value;
+            }
+        }
     }
 }

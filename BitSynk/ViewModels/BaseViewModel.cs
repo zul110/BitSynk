@@ -14,5 +14,9 @@ namespace BitSynk.ViewModels {
                 PropertyChanged(this, new PropertyChangedEventArgs(property));
             }
         }
+
+        protected virtual void InitViewModel() {
+
+        }
     }
 }

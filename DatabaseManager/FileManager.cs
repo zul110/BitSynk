@@ -213,6 +213,38 @@ namespace DatabaseManager
             }
         }
 
+        public async Task<File> GetFileByHashAsync(string _fileHash) {
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM FILES WHERE FILE_HASH = @fileHash", connection);
+                selectCommand.Parameters.AddWithValue("@fileHash", _fileHash);
+
+                using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
+                    File file = null;
+
+                    while(reader.Read()) {
+                        file = new File();
+
+                        string fileId = reader["FILE_ID"].ToString();
+                        string fileName = reader["FILE_NAME"].ToString();
+                        string fileHash = reader["FILE_HASH"].ToString();
+                        string userId = reader["USER_ID"].ToString();
+                        string deviceId = reader["DEVICE_ID"].ToString();
+
+
+                        file.FileId = fileId;
+                        file.FileName = fileName;
+                        file.FileHash = fileHash;
+                        file.UserId = userId;
+                        file.DeviceId = deviceId;
+                    }
+
+                    return file;
+                }
+            }
+        }
+
         public async Task<string> GetFileNameAsync(string _fileId) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
@@ -370,6 +402,10 @@ namespace DatabaseManager
             return await GetUserFileByNameAsync(fileName, userId) == null ? false : true;
         }
 
+        public async Task<bool> FileHashExistsAsync(string fileHash, string userId) {
+            return await GetUserFileByHashAsync(fileHash, userId) == null ? false : true;
+        }
+
         public async Task<File> GetUserFileByNameAsync(string _fileName, string _userId) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
@@ -431,6 +467,39 @@ namespace DatabaseManager
                         file.UserId = userId;
                         file.DeviceId = deviceId;
                         //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
+                    }
+
+                    return file;
+                }
+            }
+        }
+
+        public async Task<File> GetUserFileByHashAsync(string _fileHash, string _userId) {
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM FILES WHERE FILE_HASH = @fileHash AND USER_ID = @userId", connection);
+                selectCommand.Parameters.AddWithValue("@fileHash", _fileHash);
+                selectCommand.Parameters.AddWithValue("@userId", _userId);
+
+                using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
+                    File file = null;
+
+                    while(reader.Read()) {
+                        file = new File();
+
+                        string fileId = reader["FILE_ID"].ToString();
+                        string fileName = reader["FILE_NAME"].ToString();
+                        string fileHash = reader["FILE_HASH"].ToString();
+                        string userId = reader["USER_ID"].ToString();
+                        string deviceId = reader["DEVICE_ID"].ToString();
+
+
+                        file.FileId = fileId;
+                        file.FileName = fileName;
+                        file.FileHash = fileHash;
+                        file.UserId = userId;
+                        file.DeviceId = deviceId;
                     }
 
                     return file;
