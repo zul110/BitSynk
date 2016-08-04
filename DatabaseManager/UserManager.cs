@@ -13,7 +13,7 @@ namespace DatabaseManager {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO USERS (USER_ID) VALUES (@userId)", connection);
+                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO USERS (USER_ID, USER_NAME) VALUES (@userId, @userName)", connection);
                 insertCommand.Parameters.AddWithValue("@userId", userId);
                 insertCommand.Parameters.AddWithValue("@userName", Guid.NewGuid().ToString());
                 //insertCommand.Parameters.AddWithValue("@userPassword", userPassword);
