@@ -93,7 +93,7 @@ namespace BitSynk {
 
             InitDHT();
 
-            StartEngineUsingTorrents(torrentDefaults);
+            StartEngineUsingHashes(torrentDefaults);
         }
 
         private void InitDHT() {
@@ -133,7 +133,7 @@ namespace BitSynk {
                         continue;
                     }
 
-                    fileTrackerVM.AddFileToDatabase(file, torrent.InfoHash.ToString());
+                    fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file));// torrent.InfoHash.ToString());
 
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
@@ -242,6 +242,8 @@ namespace BitSynk {
         private async void StartEngineUsingHashes(TorrentSettings torrentDefaults) {
             FileManager fileClient = new FileManager();
 
+            FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
+
             List<DatabaseManager.Models.File> filesToDownload = await fileClient.GetAllFilesWithUserAsync(Settings.USER_ID);
 
             if(filesToDownload == null || filesToDownload.Count < 1) {
@@ -250,7 +252,10 @@ namespace BitSynk {
                 foreach(DatabaseManager.Models.File fileToDownload in filesToDownload) {
                     string fileHash = fileToDownload.FileHash;
 
+                    fileTrackerVM.AddFileToDatabase(fileToDownload.FileName, fileToDownload.FileHash);
+
                     Console.WriteLine("FileHash: " + fileHash);
+
                     //magnet:?xt=urn:btih:D4001F5F3144DF3764F0FD2A90C84EB0FB3E7C44&db=test
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.

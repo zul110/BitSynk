@@ -86,7 +86,7 @@ namespace BitSynk.Helpers {
             // processed in memory
             c.Create(fileSource, savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent"); // GetTorrentFilePath(savePath, path));
 
-            return savePath + Path.GetFileNameWithoutExtension(path) + ".torrent";
+            return savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
 
             //AnnounceFileAddition(Path.GetFileName(path), fileHash);
         }

@@ -30,8 +30,8 @@ namespace BitSynk.ViewModels {
             if(!Directory.Exists(Settings.FILES_DIRECTORY)) {
                 Directory.CreateDirectory(Settings.FILES_DIRECTORY);
             }
-            
-            timer.Start();
+            CheckForNewFiles();
+            //timer.Start();
         }
 
         private void Timer_Tick(object sender, EventArgs e) {
@@ -45,7 +45,7 @@ namespace BitSynk.ViewModels {
 
             if(files != null && files.Count > 0) {
                 foreach(string file in files) {
-                    if(!file.Contains("fastresume.data") && !knownFiles.Contains(file)) {
+                    if(!file.Contains("fastresume.data") && !knownFiles.Contains(file) && !file.EndsWith(".torrent")) {
                         hash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
 
                         AddFileToDatabase(file, hash);
