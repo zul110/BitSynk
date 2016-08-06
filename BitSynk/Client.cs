@@ -11,6 +11,7 @@ using MonoTorrent.Dht;
 using MonoTorrent.Dht.Listeners;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -57,7 +58,19 @@ namespace BitSynk {
             if(!Directory.Exists(torrentsPath))
                 Directory.CreateDirectory(torrentsPath);
 
-            InitEngine();
+            BackgroundWorker bw = new BackgroundWorker();
+
+            bw.DoWork += (sender, e) => {
+                InitEngine();
+            };
+
+            bw.RunWorkerCompleted += (sender, e) => {
+                if(e.Error != null) {
+
+                }
+            };
+
+            bw.RunWorkerAsync();
         }
 
         private BEncodedDictionary GetFastResumeFile() {
@@ -93,7 +106,7 @@ namespace BitSynk {
 
             InitDHT();
 
-            StartEngineUsingHashes(torrentDefaults);
+            StartEngineUsingTorrents(torrentDefaults);
         }
 
         private void InitDHT() {

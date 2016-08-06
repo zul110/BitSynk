@@ -1,0 +1,25 @@
+﻿<Page x:Class="BitSynk.Pages.LinkDevicesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:BitSynk.Pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="300" d:DesignWidth="300"
+      Title="LinkDevicesPage">
+
+    <Grid>
+        <StackPanel VerticalAlignment="Center"
+                    HorizontalAlignment="Center">
+            <TextBox x:Name="userCodeBox"
+                     MaxLength="5"
+                     MinHeight="30"/>
+            
+            <Button x:Name="linkButton"
+                    Margin="0,6,0,0"
+                    Content="Link"
+                    Padding="12,6"
+                    Click="linkButton_Click" />
+        </StackPanel>
+    </Grid>
+</Page>

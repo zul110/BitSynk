@@ -1,4 +1,5 @@
 ﻿using BitSynk.Helpers;
+using BitSynk.Pages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,10 +22,10 @@ namespace BitSynk {
     public partial class MainWindow : Window {
         public MainWindow() {
             InitializeComponent();
-
+            
             Bootstrap.Instance.InitBootstrap();
 
-            Client client = new Client();
+            //Client client = new Client();
         }
     }
 }

@@ -123,8 +123,8 @@ namespace DatabaseManager {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM USERS WHERE USER_ID LIKE @userCode%", connection);
-                selectCommand.Parameters.AddWithValue("@userCode", _userCode);
+                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM USERS WHERE USER_ID LIKE @userCode", connection);
+                selectCommand.Parameters.AddWithValue("@userCode", _userCode + "%");
 
                 using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
                     User user = null;

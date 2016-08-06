@@ -53,7 +53,12 @@ namespace BitSynk.Helpers {
 
             // Add one tier which contains two trackers
             RawTrackerTier tier = new RawTrackerTier();
-            tier.Add("udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
+            foreach(string tracker in new Trackers().trackers) {
+                tier.Add(tracker.Trim());
+            }
+            //tier.Add("udp://tracker.openbittorrent.com:80/announce");
+            //tier.Add("udp://tracker.publicbt.com:80/announce");
+            //tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
             //tier.Add("http://" + Utils.GetPublicIPAddress() + ":10000/announce/");//Utils.GetLocalIPAddress() + ":10000");// "http://localhost/announce");
 
             c.Announces.Add(tier);
@@ -84,9 +89,10 @@ namespace BitSynk.Helpers {
             // Different overloads of 'Create' can be used to save the data to a Stream
             // or just return it as a BEncodedDictionary (its native format) so it can be
             // processed in memory
-            c.Create(fileSource, savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent"); // GetTorrentFilePath(savePath, path));
+            string torrentPath = savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
+            c.Create(fileSource, torrentPath); // GetTorrentFilePath(savePath, path));
 
-            return savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
+            return torrentPath; // savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
 
             //AnnounceFileAddition(Path.GetFileName(path), fileHash);
         }
