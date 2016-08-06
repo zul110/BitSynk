@@ -90,7 +90,10 @@ namespace BitSynk.Helpers {
             // or just return it as a BEncodedDictionary (its native format) so it can be
             // processed in memory
             string torrentPath = savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
-            c.Create(fileSource, torrentPath); // GetTorrentFilePath(savePath, path));
+
+            if(!File.Exists(torrentPath)) {
+                c.Create(fileSource, torrentPath); // GetTorrentFilePath(savePath, path));
+            }
 
             return torrentPath; // savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
 
