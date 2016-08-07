@@ -33,7 +33,11 @@ namespace BitSynk {
         private static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
         private static Top10Listener listener;			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
-        public Client() {
+        private object parameter;
+
+        public Client(object parameter) {
+            this.parameter = parameter;
+
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
             torrentsPath = Path.Combine(basePath, Settings.FILES_DIRECTORY_NAME);				// This is the directory we will save .torrents to
@@ -106,6 +110,13 @@ namespace BitSynk {
 
             InitDHT();
 
+            //if(parameter.ToString() == "hashes") {
+            //    StartEngineUsingHashes(torrentDefaults);
+            //} else {
+            //    StartEngineUsingTorrents(torrentDefaults);
+            //}
+
+            StartEngineUsingHashes(torrentDefaults);
             StartEngineUsingTorrents(torrentDefaults);
         }
 

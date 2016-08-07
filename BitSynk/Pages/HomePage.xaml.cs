@@ -1,6 +1,4 @@
-﻿using BitSynk.Helpers;
-using BitSynk.Pages;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,15 +13,23 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace BitSynk {
+namespace BitSynk.Pages {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for HomePage.xaml
     /// </summary>
-    public partial class MainWindow : Window {
-        public MainWindow() {
+    public partial class HomePage : BasePage {
+        object parameter = null;
+
+        public HomePage(object parameter) {
             InitializeComponent();
-            
-            Bootstrap.Instance.InitBootstrap();
+
+            this.parameter = parameter;
+        }
+
+        private void Page_Loaded(object sender, RoutedEventArgs e) {
+            ClearBackEntries();
+
+            Client client = new Client(parameter);
         }
     }
 }

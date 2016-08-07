@@ -108,7 +108,7 @@ namespace BitSynk.ViewModels {
                     await LinkDevices(user);
                 }
 
-                return true;
+                return false;
             } catch(Exception ex) {
                 throw ex;
             }

@@ -402,8 +402,8 @@ namespace DatabaseManager
             return await GetUserFileByNameAsync(fileName, userId) == null ? false : true;
         }
 
-        public async Task<bool> FileHashExistsAsync(string fileHash, string userId) {
-            return await GetUserFileByHashAsync(fileHash, userId) == null ? false : true;
+        public async Task<bool> FileHashExistsAsync(string fileHash) {
+            return await GetFileByHashAsync(fileHash) == null ? false : true;
         }
 
         public async Task<File> GetUserFileByNameAsync(string _fileName, string _userId) {

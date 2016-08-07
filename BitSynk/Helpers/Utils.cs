@@ -1,5 +1,6 @@
 ﻿using BencodeNET;
 using BencodeNET.Objects;
+using BitSynk.ViewModels;
 using MonoTorrent;
 using MonoTorrent.Common;
 using System;
@@ -93,6 +94,7 @@ namespace BitSynk.Helpers {
 
             if(!File.Exists(torrentPath)) {
                 c.Create(fileSource, torrentPath); // GetTorrentFilePath(savePath, path));
+                FileTrackerViewModel.knownFiles.Add(savePath + "\\" + Path.GetFileName(path));
             }
 
             return torrentPath; // savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";

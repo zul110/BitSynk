@@ -9,7 +9,6 @@
         Title="MainWindow"
         Height="350"
         Width="525">
-    <Frame Source="/Pages/LinkDevicesPage.xaml">
-        
-    </Frame>
+    <Frame x:Name="mainPage"
+           Source="/Pages/MainPage.xaml"/>
 </Window>

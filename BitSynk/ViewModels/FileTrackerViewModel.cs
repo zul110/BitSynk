@@ -12,7 +12,7 @@ using System.Windows.Threading;
 namespace BitSynk.ViewModels {
     public class FileTrackerViewModel : BaseViewModel {
         private DispatcherTimer timer;
-        private List<string> knownFiles;
+        public static List<string> knownFiles;
 
         public FileTrackerViewModel() {
             timer = new DispatcherTimer();
@@ -30,15 +30,15 @@ namespace BitSynk.ViewModels {
             if(!Directory.Exists(Settings.FILES_DIRECTORY)) {
                 Directory.CreateDirectory(Settings.FILES_DIRECTORY);
             }
-            CheckForNewFiles();
-            //timer.Start();
+            
+            timer.Start();
         }
 
         private void Timer_Tick(object sender, EventArgs e) {
             CheckForNewFiles();
         }
 
-        private void CheckForNewFiles() {
+        private async void CheckForNewFiles() {
             string hash = "";
 
             List<string> files = Directory.GetFiles(Settings.FILES_DIRECTORY).ToList();
@@ -48,7 +48,9 @@ namespace BitSynk.ViewModels {
                     if(!file.Contains("fastresume.data") && !knownFiles.Contains(file) && !file.EndsWith(".torrent")) {
                         hash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
 
-                        AddFileToDatabase(file, hash);
+                        if(!(await(new FileManager().FileHashExistsAsync(hash)))) {
+                            AddFileToDatabase(file, hash);
+                        }
                     }
                 }
             }

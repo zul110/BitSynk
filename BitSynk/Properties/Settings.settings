@@ -17,5 +17,8 @@
     <Setting Name="DOWNLOADS_DIRECTORY_NAME" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
+    <Setting Name="FIRST_RUN" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

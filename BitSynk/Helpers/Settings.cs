@@ -21,6 +21,18 @@ namespace BitSynk.Helpers {
         public static string DOWNLOADS_DIRECTORY_NAME;
         public static string DOWNLOADS_DIRECTORY;
 
+        public static bool FIRST_RUN
+        {
+            get {
+                string firstRun = GetValue(Constants.FIRST_RUN);
+                return (firstRun == null || firstRun == "") ? true : bool.Parse(firstRun);
+            }
+
+            set {
+                SetValue(Constants.FIRST_RUN, value.ToString());
+            }
+        }
+
         public static void Bootstrap() {
             SetupDirectories();
 
@@ -88,6 +100,10 @@ namespace BitSynk.Helpers {
 
         public static string GetValue(string key) {
             return Properties.Settings.Default[key]?.ToString();
+        }
+
+        public static void ResetValue(string key) {
+            Properties.Settings.Default[key] = Properties.Settings.Default.Properties[key].DefaultValue;
         }
     }
 }

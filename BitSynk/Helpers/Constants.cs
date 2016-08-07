@@ -15,5 +15,7 @@ namespace BitSynk.Helpers {
 
         public const string DOWNLOADS_DIRECTORY_NAME = "DOWNLOADS_DIRECTORY_NAME";
         public const string DEFAULT_DOWNLOADS_DIRECTORY_NAME = "Downloads";
+
+        public const string FIRST_RUN = "FIRST_RUN";
     }
 }

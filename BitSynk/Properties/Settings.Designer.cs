@@ -82,5 +82,17 @@ namespace BitSynk.Properties {
                 this["DOWNLOADS_DIRECTORY_NAME"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string FIRST_RUN {
+            get {
+                return ((string)(this["FIRST_RUN"]));
+            }
+            set {
+                this["FIRST_RUN"] = value;
+            }
+        }
     }
 }

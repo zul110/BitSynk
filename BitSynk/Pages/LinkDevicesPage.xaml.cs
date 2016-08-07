@@ -19,7 +19,7 @@ namespace BitSynk.Pages {
     /// <summary>
     /// Interaction logic for LinkDevicesPage.xaml
     /// </summary>
-    public partial class LinkDevicesPage : Page {
+    public partial class LinkDevicesPage : BasePage {
         public LinkDevicesPage() {
             InitializeComponent();
         }
@@ -31,12 +31,20 @@ namespace BitSynk.Pages {
         private async void LinkDevices() {
             string userCode = userCodeBox.Text;
 
+            if(userCode.Length < 5) {
+                MessageBox.Show("Invalid code. Please make sure that you have the correct 5 digit code, and try agian.");
+
+                return;
+            }
+
             if(userCode != Settings.USER_ID.Substring(0, 5)) {
                 if(await new AuthViewModel().LinkDevices(userCode)) {
-                    Client client = new Client();
+                    GoToPage(new HomePage("hashes"));
+                } else {
+                    MessageBox.Show("Invalid code. Please make sure that you have the correct 5 digit code, and try agian.");
                 }
             } else {
-                Client client = new Client();
+                MessageBox.Show("Invalid code. You cannot link this device to itself!");
             }
         }
     }
