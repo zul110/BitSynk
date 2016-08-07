@@ -116,8 +116,8 @@ namespace BitSynk {
             //    StartEngineUsingTorrents(torrentDefaults);
             //}
 
-            StartEngineUsingHashes(torrentDefaults);
-            StartEngineUsingTorrents(torrentDefaults);
+            //StartEngineUsingHashes(torrentDefaults);
+            //StartEngineUsingTorrents(torrentDefaults);
         }
 
         private void InitDHT() {
@@ -136,7 +136,7 @@ namespace BitSynk {
             engine.DhtEngine.Start(nodes);
         }
 
-        private void StartEngineUsingTorrents(TorrentSettings torrentDefaults) {
+        public void StartEngineUsingTorrents(TorrentSettings torrentDefaults) {
             Torrent torrent = null;
 
             FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();

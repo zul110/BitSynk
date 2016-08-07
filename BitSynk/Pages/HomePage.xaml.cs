@@ -18,7 +18,8 @@ namespace BitSynk.Pages {
     /// Interaction logic for HomePage.xaml
     /// </summary>
     public partial class HomePage : BasePage {
-        object parameter = null;
+        private Client client;
+        private object parameter = null;
 
         public HomePage(object parameter) {
             InitializeComponent();
@@ -29,7 +30,7 @@ namespace BitSynk.Pages {
         private void Page_Loaded(object sender, RoutedEventArgs e) {
             ClearBackEntries();
 
-            Client client = new Client(parameter);
+            client = new Client(parameter);
         }
     }
 }
