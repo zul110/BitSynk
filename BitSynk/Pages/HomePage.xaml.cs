@@ -31,6 +31,7 @@ namespace BitSynk.Pages {
             ClearBackEntries();
 
             client = new Client(parameter);
+            client.StartEngineUsingTorrents();
         }
     }
 }
