@@ -33,6 +33,9 @@ namespace BitSynk {
         private static List<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
         private static Top10Listener listener;			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
 
+        private EngineSettings engineSettings;
+        private TorrentSettings torrentDefaults;
+
         private object parameter;
 
         public Client(object parameter) {
@@ -90,7 +93,7 @@ namespace BitSynk {
         }
 
         private void InitEngine() {
-            EngineSettings engineSettings = new EngineSettings(downloadsPath, port);
+            engineSettings = new EngineSettings(downloadsPath, port);
             engineSettings.PreferEncryption = false;
             engineSettings.AllowedEncryption = EncryptionTypes.All;
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
@@ -103,7 +106,7 @@ namespace BitSynk {
             // 50 open connections - should never really need to be changed
             // Unlimited download speed - valid range from 0 -> int.Max
             // Unlimited upload speed - valid range from 0 -> int.Max
-            TorrentSettings torrentDefaults = new TorrentSettings(4, 150, 0, 0);
+            torrentDefaults = new TorrentSettings(4, 150, 0, 0);
 
             engine = new ClientEngine(engineSettings);
             engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, port));
@@ -136,7 +139,7 @@ namespace BitSynk {
             engine.DhtEngine.Start(nodes);
         }
 
-        public void StartEngineUsingTorrents(TorrentSettings torrentDefaults) {
+        public void StartEngineUsingTorrents() {
             Torrent torrent = null;
 
             FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
@@ -263,7 +266,7 @@ namespace BitSynk {
             }
         }
 
-        private async void StartEngineUsingHashes(TorrentSettings torrentDefaults) {
+        private async void StartEngineUsingHashes() {
             FileManager fileClient = new FileManager();
 
             FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
