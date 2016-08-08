@@ -270,20 +270,24 @@ namespace BitSynk {
 
             List<DatabaseManager.Models.File> filesToDownload = await fileClient.GetAllFilesWithUserAsync(Settings.USER_ID);
 
-            if(filesToDownload == null || filesToDownload.Count < 1) {
+            List<string> hashes = await fileTrackerVM.CheckForNewFiles();
+
+            foreach(var file in filesToDownload) {
+                hashes.Add(file.FileHash);
+            }
+
+            if(hashes == null || hashes.Count < 1) {
                 Console.WriteLine("No files to download.");
             } else {
-                foreach(DatabaseManager.Models.File fileToDownload in filesToDownload) {
-                    string fileHash = fileToDownload.FileHash;
+                foreach(string hash in hashes) {
+                    //fileTrackerVM.AddFileToDatabase(fileToDownload.FileName, fileToDownload.FileHash);
 
-                    fileTrackerVM.AddFileToDatabase(fileToDownload.FileName, fileToDownload.FileHash);
-
-                    Console.WriteLine("FileHash: " + fileHash);
+                    //Console.WriteLine("FileHash: " + fileHash);
 
                     //magnet:?xt=urn:btih:D4001F5F3144DF3764F0FD2A90C84EB0FB3E7C44&db=test
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
-                    TorrentManager manager1 = new TorrentManager(InfoHash.FromHex(fileHash), downloadsPath, torrentDefaults, torrentsPath, new List<RawTrackerTier>()); //new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                    TorrentManager manager1 = new TorrentManager(InfoHash.FromHex(hash), downloadsPath, torrentDefaults, torrentsPath, new List<RawTrackerTier>()); //new TorrentManager(torrent, downloadsPath, torrentDefaults);
                                                                                                                                                                         //torrent = manager1.Torrent;
                                                                                                                                                                         //if (fastResume.ContainsKey(torrent.InfoHash.ToHex ()))
                                                                                                                                                                         //    manager1.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.ToHex ()]));
