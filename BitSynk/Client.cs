@@ -36,6 +36,8 @@ namespace BitSynk {
         private EngineSettings engineSettings;
         private TorrentSettings torrentDefaults;
 
+        private List<RawTrackerTier> trackers;
+
         private object parameter;
 
         public Client(object parameter) {
@@ -65,6 +67,8 @@ namespace BitSynk {
             if(!Directory.Exists(torrentsPath))
                 Directory.CreateDirectory(torrentsPath);
 
+            InitTrackers();
+
             BackgroundWorker bw = new BackgroundWorker();
 
             bw.DoWork += (sender, e) => {
@@ -78,6 +82,19 @@ namespace BitSynk {
             };
 
             bw.RunWorkerAsync();
+        }
+
+        private void InitTrackers() {
+            List<string> trackers = new Trackers().trackers;
+            this.trackers = new List<RawTrackerTier>();
+
+            RawTrackerTier rawTrackerTier = new RawTrackerTier();
+
+            foreach(string tracker in trackers) {
+                rawTrackerTier.Add(tracker.Trim());
+            }
+
+            this.trackers.Add(rawTrackerTier);
         }
 
         private BEncodedDictionary GetFastResumeFile() {
@@ -181,7 +198,7 @@ namespace BitSynk {
                 Console.WriteLine("No files to download.");
             } else {
                 foreach(string hash in hashes) {
-                    TorrentManager manager1 = new TorrentManager(InfoHash.FromHex(hash), downloadsPath, torrentDefaults, torrentsPath, new List<RawTrackerTier>()); //new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                    TorrentManager manager1 = new TorrentManager(InfoHash.FromHex(hash), downloadsPath, torrentDefaults, torrentsPath, trackers); //new List<RawTrackerTier>()); //new TorrentManager(torrent, downloadsPath, torrentDefaults);
                                                                                                                                                                     //    manager1.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.ToHex ()]));
                     engine.Register(manager1);
 
