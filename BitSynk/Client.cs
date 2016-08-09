@@ -190,8 +190,10 @@ namespace BitSynk {
 
             List<string> hashes = await fileTrackerVM.CheckForNewFiles();
 
-            foreach(var file in filesToDownload) {
-                hashes.Add(file.FileHash);
+            if(filesToDownload != null && filesToDownload.Count > 0) {
+                foreach(var file in filesToDownload) {
+                    hashes.Add(file.FileHash);
+                }
             }
 
             if(hashes == null || hashes.Count < 1) {

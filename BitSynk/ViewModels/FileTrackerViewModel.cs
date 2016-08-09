@@ -45,12 +45,14 @@ namespace BitSynk.ViewModels {
 
             if(files != null && files.Count > 0) {
                 foreach(string file in files) {
-                    string torrentPath = Utils.CreateTorrent(file, Settings.FILES_DIRECTORY);
-                    hash = Utils.GetTorrentInfoHash(torrentPath);
+                    if(!file.Contains("fastresume.data")) {
+                        string torrentPath = Utils.CreateTorrent(file, Settings.FILES_DIRECTORY);
+                        hash = Utils.GetTorrentInfoHash(torrentPath);
 
-                    if(!file.Contains("fastresume.data") && !knownFiles.Contains(file) && !file.EndsWith(".torrent")) {
-                        if(!(await(new FileManager().FileHashExistsAsync(hash)))) {
-                            AddFileToDatabase(file, hash);
+                        if(!knownFiles.Contains(hash) && !file.EndsWith(".torrent")) {
+                            if(!(await (new FileManager().FileHashExistsAsync(hash)))) {
+                                AddFileToDatabase(file, hash);
+                            }
                         }
                     }
                 }
@@ -63,10 +65,10 @@ namespace BitSynk.ViewModels {
             try {
                 FileManager fileManager = new FileManager();
 
-                if(!(await fileManager.GetUserFileByHashAsync(hash, Settings.USER_ID) != null)) {
+                if(!(await fileManager.GetFileByHashAsync(hash) != null)) {
                     await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, Settings.USER_ID, Settings.DEVICE_ID);
 
-                    knownFiles.Add(file);
+                    knownFiles.Add(hash);
                 }
             } catch(Exception ex) {
                 throw ex;

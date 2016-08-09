@@ -28,7 +28,7 @@ namespace BitSynk.Pages {
         }
         
         private void CheckFirstRun() {
-            Settings.ResetValue(Constants.FIRST_RUN);
+            //Settings.ResetValue(Constants.FIRST_RUN);
 
             string firstRun = Settings.GetValue(Constants.FIRST_RUN);
 
