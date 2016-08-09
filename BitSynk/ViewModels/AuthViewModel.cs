@@ -106,6 +106,8 @@ namespace BitSynk.ViewModels {
 
                 if(user != null) {
                     await LinkDevices(user);
+
+                    return true;
                 }
 
                 return false;
