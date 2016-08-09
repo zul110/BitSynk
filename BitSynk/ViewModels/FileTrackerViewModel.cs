@@ -51,7 +51,7 @@ namespace BitSynk.ViewModels {
 
                         if(!knownFiles.Contains(hash) && !file.EndsWith(".torrent")) {
                             if(!(await (new FileManager().FileHashExistsAsync(hash)))) {
-                                AddFileToDatabase(file, hash);
+                                AddFileToDatabase(file, hash, torrentPath);
                             }
                         }
                     }
@@ -61,12 +61,12 @@ namespace BitSynk.ViewModels {
             return knownFiles;
         }
 
-        public async void AddFileToDatabase(string file, string hash) {
+        public async void AddFileToDatabase(string file, string hash, string torrentPath) {
             try {
                 FileManager fileManager = new FileManager();
 
                 if(!(await fileManager.GetFileByHashAsync(hash) != null)) {
-                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, Settings.USER_ID, Settings.DEVICE_ID);
+                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath));
 
                     knownFiles.Add(hash);
                 }

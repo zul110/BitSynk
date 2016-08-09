@@ -111,7 +111,7 @@ namespace BitSynk {
 
         private void InitEngine() {
             engineSettings = new EngineSettings(downloadsPath, port);
-            engineSettings.PreferEncryption = false;
+            engineSettings.PreferEncryption = true;
             engineSettings.AllowedEncryption = EncryptionTypes.All;
             //engineSettings.GlobalMaxUploadSpeed = 30 * 1024;
             //engineSettings.GlobalMaxDownloadSpeed = 100 * 1024;
@@ -168,7 +168,7 @@ namespace BitSynk {
                         continue;
                     }
 
-                    fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file));// torrent.InfoHash.ToString());
+                    fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
 
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
@@ -188,11 +188,38 @@ namespace BitSynk {
 
             List<DatabaseManager.Models.File> filesToDownload = await fileClient.GetAllFilesWithUserAsync(Settings.USER_ID);
 
-            List<string> hashes = await fileTrackerVM.CheckForNewFiles();
+            List<string> hashes = new List<string>(); // await fileTrackerVM.CheckForNewFiles();
 
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
-                    hashes.Add(file.FileHash);
+                    //hashes.Add(file.FileHash);
+                    string torrentFilePath = await Utils.CreateFile(file);
+
+                    try {
+                        // Load the .torrent from the file into a Torrent instance
+                        // You can use this to do preprocessing should you need to
+                        torrent = Torrent.Load(torrentFilePath);
+                        Console.WriteLine(torrent.InfoHash.ToString());
+                    } catch(Exception e) {
+                        Console.Write("Couldn't decode {0}: ", file);
+                        Console.WriteLine(e.Message);
+                        continue;
+                    }
+
+                    //fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
+
+                    // When any preprocessing has been completed, you create a TorrentManager
+                    // which you then register with the engine.
+                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                    torrent = manager.Torrent;
+                    if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                        manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                    engine.Register(manager);
+
+                    // Store the torrent manager in our list so we can access it later
+                    torrents.Add(manager);
+                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+
                 }
             }
 

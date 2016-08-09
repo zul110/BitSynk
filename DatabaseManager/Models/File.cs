@@ -11,6 +11,7 @@ namespace DatabaseManager.Models {
         string fileHash;
         string userId;
         string deviceId;
+        string fileContents;
         
         public string FileId
         {
@@ -40,6 +41,12 @@ namespace DatabaseManager.Models {
         {
             get { return deviceId; }
             set { deviceId = value; }
+        }
+
+        public string FileContents
+        {
+            get { return fileContents; }
+            set { fileContents = value; }
         }
     }
 }

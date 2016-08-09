@@ -1,4 +1,5 @@
 ﻿using DatabaseManager;
+using DatabaseManager.Helpers;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
 using MonoTorrent.Client;
@@ -97,7 +98,7 @@ namespace StorageManager {
             }
         }
 
-        private void CreateTorrentFile(string path, string savePath, string fileHash) {
+        private async void CreateTorrentFile(string path, string savePath, string fileHash) {
             // The class used for creating the torrent
             TorrentCreator c = new TorrentCreator();
 
@@ -130,13 +131,14 @@ namespace StorageManager {
             // recursively added
             ITorrentFileSource fileSource = new TorrentFileSource(path);
 
+            string torrentFilePath = GetTorrentFilePath(savePath, path);
             // Create the torrent file and save it directly to the specified path
             // Different overloads of 'Create' can be used to save the data to a Stream
             // or just return it as a BEncodedDictionary (its native format) so it can be
             // processed in memory
-            c.Create(fileSource, GetTorrentFilePath(savePath, path));// savePath + Path.GetFileNameWithoutExtension(path) + ".torrent");
+            c.Create(fileSource, torrentFilePath);// savePath + Path.GetFileNameWithoutExtension(path) + ".torrent");
 
-            AnnounceFileAddition(Path.GetFileName(path), fileHash);
+            AnnounceFileAddition(Path.GetFileName(path), fileHash, await Utils.ReadFileAsync(torrentFilePath));
         }
 
         public string GetTorrentFilePath(string savePath, string path) {
@@ -147,9 +149,9 @@ namespace StorageManager {
             return Path.GetFileNameWithoutExtension(path) + ".torrent";
         }
 
-        public async void AnnounceFileAddition(string fileName, string fileHash) {
+        public async void AnnounceFileAddition(string fileName, string fileHash, string fileContents) {
             FileManager fileService = new FileManager();
-            await fileService.AddFileAsync(Guid.NewGuid().ToString(), fileName, fileHash, USER_ID, DEVICE_ID);
+            await fileService.AddFileAsync(Guid.NewGuid().ToString(), fileName, fileHash, USER_ID, DEVICE_ID, fileContents);
         }
 
         public void DownloadTorrent(string path, ClientEngine engine) {

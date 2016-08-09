@@ -54,9 +54,9 @@ namespace BitSynk.Helpers {
 
             // Add one tier which contains two trackers
             RawTrackerTier tier = new RawTrackerTier();
-            foreach(string tracker in new Trackers().trackers) {
-                tier.Add(tracker.Trim());
-            }
+            //foreach(string tracker in new Trackers().trackers) {
+            //    tier.Add(tracker.Trim());
+            //}
             //tier.Add("udp://tracker.openbittorrent.com:80/announce");
             //tier.Add("udp://tracker.publicbt.com:80/announce");
             //tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
@@ -108,6 +108,17 @@ namespace BitSynk.Helpers {
 
         public static string GetTorrentFileName(string path) {
             return Path.GetFileNameWithoutExtension(path) + ".torrent";
+        }
+
+        public static async Task<string> ReadFileAsync(string filePath) {
+            return File.ReadAllText(filePath);
+        }
+
+        public static async Task<string> CreateFile(DatabaseManager.Models.File file) {
+            string torrentFilePath = Settings.DOWNLOADS_DIRECTORY + "\\" + GetTorrentFileName(file.FileName);
+            File.WriteAllText(torrentFilePath, file.FileContents);
+
+            return torrentFilePath;
         }
     }
 }
