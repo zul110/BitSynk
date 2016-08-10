@@ -110,13 +110,13 @@ namespace BitSynk.Helpers {
             return Path.GetFileNameWithoutExtension(path) + ".torrent";
         }
 
-        public static async Task<string> ReadFileAsync(string filePath) {
-            return File.ReadAllText(filePath);
+        public static async Task<byte[]> ReadFileAsync(string filePath) {
+            return File.ReadAllBytes(filePath);
         }
 
         public static async Task<string> CreateFile(DatabaseManager.Models.File file) {
             string torrentFilePath = Settings.DOWNLOADS_DIRECTORY + "\\" + GetTorrentFileName(file.FileName);
-            File.WriteAllText(torrentFilePath, file.FileContents);
+            File.WriteAllBytes(torrentFilePath, file.FileContents);
 
             return torrentFilePath;
         }

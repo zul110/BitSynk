@@ -149,7 +149,7 @@ namespace StorageManager {
             return Path.GetFileNameWithoutExtension(path) + ".torrent";
         }
 
-        public async void AnnounceFileAddition(string fileName, string fileHash, string fileContents) {
+        public async void AnnounceFileAddition(string fileName, string fileHash, byte[] fileContents) {
             FileManager fileService = new FileManager();
             await fileService.AddFileAsync(Guid.NewGuid().ToString(), fileName, fileHash, USER_ID, DEVICE_ID, fileContents);
         }

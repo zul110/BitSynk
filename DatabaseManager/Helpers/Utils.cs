@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace DatabaseManager.Helpers {
     public static class Utils {
-        public static async Task<string> ReadFileAsync(string filePath) {
-            return File.ReadAllText(filePath);
+        public static async Task<byte[]> ReadFileAsync(string filePath) {
+            return File.ReadAllBytes(filePath);
         }
     }
 }

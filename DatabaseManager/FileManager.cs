@@ -27,7 +27,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         File file = new File();
                         file.FileId = fileId;
@@ -64,7 +64,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         File file = new File();
                         file.FileId = fileId;
@@ -101,7 +101,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         File file = new File();
                         file.FileId = fileId;
@@ -138,7 +138,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
@@ -172,7 +172,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
@@ -206,7 +206,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
@@ -240,13 +240,14 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
                         file.FileHash = fileHash;
                         file.UserId = userId;
                         file.DeviceId = deviceId;
+                        file.FileContents = fileContents;
                     }
 
                     return file;
@@ -272,13 +273,14 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
                         file.FileHash = fileHash;
                         file.UserId = userId;
                         file.DeviceId = deviceId;
+                        file.FileContents = fileContents;
                         //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
                     }
 
@@ -305,13 +307,14 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
                         file.FileHash = fileHash;
                         file.UserId = userId;
                         file.DeviceId = deviceId;
+                        file.FileContents = fileContents;
                         //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
                     }
 
@@ -320,7 +323,7 @@ namespace DatabaseManager
             }
         }
 
-        public async Task<bool> AddFileAsync(string fileId, string fileName, string fileHash, string userId, string deviceId, string fileContents) {
+        public async Task<bool> AddFileAsync(string fileId, string fileName, string fileHash, string userId, string deviceId, byte[] fileContents) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
@@ -435,7 +438,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
@@ -470,7 +473,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
@@ -505,7 +508,7 @@ namespace DatabaseManager
                         string fileHash = reader["FILE_HASH"].ToString();
                         string userId = reader["USER_ID"].ToString();
                         string deviceId = reader["DEVICE_ID"].ToString();
-                        string fileContents = reader["FILE_CONTENTS"].ToString();
+                        byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
 
                         file.FileId = fileId;
                         file.FileName = fileName;
