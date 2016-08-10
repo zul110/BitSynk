@@ -115,7 +115,7 @@ namespace BitSynk.Helpers {
         }
 
         public static async Task<string> CreateFile(DatabaseManager.Models.File file) {
-            string torrentFilePath = Settings.DOWNLOADS_DIRECTORY + "\\" + GetTorrentFileName(file.FileName);
+            string torrentFilePath = Settings.FILES_DIRECTORY + "\\" + GetTorrentFileName(file.FileName);
             File.WriteAllBytes(torrentFilePath, file.FileContents);
 
             return torrentFilePath;

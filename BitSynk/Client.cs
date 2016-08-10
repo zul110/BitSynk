@@ -69,19 +69,7 @@ namespace BitSynk {
 
             InitTrackers();
 
-            BackgroundWorker bw = new BackgroundWorker();
-
-            bw.DoWork += (sender, e) => {
-                InitEngine();
-            };
-
-            bw.RunWorkerCompleted += (sender, e) => {
-                if(e.Error != null) {
-
-                }
-            };
-
-            bw.RunWorkerAsync();
+            InitEngine();
         }
 
         private void InitTrackers() {
@@ -186,9 +174,9 @@ namespace BitSynk {
 
             FileManager fileClient = new FileManager();
 
-            List<DatabaseManager.Models.File> filesToDownload = await fileClient.GetAllFilesWithUserAsync(Settings.USER_ID);
+            List<DatabaseManager.Models.File> filesToDownload = new List<DatabaseManager.Models.File>();// await fileClient.GetAllFilesWithUserAsync(Settings.USER_ID);
 
-            List<string> hashes = new List<string>(); // await fileTrackerVM.CheckForNewFiles();
+            List<string> hashes = await fileTrackerVM.CheckForNewFiles();
 
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {

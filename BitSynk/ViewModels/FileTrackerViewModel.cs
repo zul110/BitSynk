@@ -31,7 +31,7 @@ namespace BitSynk.ViewModels {
                 Directory.CreateDirectory(Settings.FILES_DIRECTORY);
             }
             
-            timer.Start();
+            //timer.Start();
         }
 
         private void Timer_Tick(object sender, EventArgs e) {

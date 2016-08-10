@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,7 +32,20 @@ namespace BitSynk.Pages {
             ClearBackEntries();
 
             client = new Client(parameter);
-            client.StartEngineUsingTorrents();
+
+            BackgroundWorker bw = new BackgroundWorker();
+
+            bw.DoWork += (s, ev) => {
+                client.StartEngineUsingTorrents();
+            };
+
+            bw.RunWorkerCompleted += (s, ev) => {
+                if(ev.Error != null) {
+
+                }
+            };
+
+            bw.RunWorkerAsync();
         }
     }
 }
