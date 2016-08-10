@@ -138,7 +138,10 @@ namespace BitSynk {
         public async void StartEngineUsingTorrents() {
             Torrent torrent = null;
 
+            FileManager fileManager = new FileManager();
             FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
+
+            List<DatabaseManager.Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
             BEncodedDictionary fastResume = GetFastResumeFile();
 
@@ -172,12 +175,6 @@ namespace BitSynk {
                 }
             }
 
-            FileManager fileClient = new FileManager();
-
-            List<DatabaseManager.Models.File> filesToDownload = new List<DatabaseManager.Models.File>();// await fileClient.GetAllFilesWithUserAsync(Settings.USER_ID);
-
-            List<string> hashes = await fileTrackerVM.CheckForNewFiles();
-
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
                     //hashes.Add(file.FileHash);
@@ -199,30 +196,33 @@ namespace BitSynk {
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
                     TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                    torrent = manager.Torrent;
-                    if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                        manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                    engine.Register(manager);
+                    if(!torrents.Contains(manager)) {
+                        torrent = manager.Torrent;
 
-                    // Store the torrent manager in our list so we can access it later
-                    torrents.Add(manager);
-                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                        if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
+                            manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                            engine.Register(manager);
+                        }
 
+                        torrents.Add(manager);
+
+                        manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                    }
                 }
             }
 
-            if(hashes == null || hashes.Count < 1) {
-                Console.WriteLine("No files to download.");
-            } else {
-                foreach(string hash in hashes) {
-                    TorrentManager manager1 = new TorrentManager(InfoHash.FromHex(hash), downloadsPath, torrentDefaults, torrentsPath, trackers); //new List<RawTrackerTier>()); //new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                                                                                                                                                                    //    manager1.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.ToHex ()]));
-                    engine.Register(manager1);
+            //if(torrents == null || torrents.Count < 1) {
+            //    Console.WriteLine("No files to download.");
+            //} else {
+            //    foreach(string hash in hashes) {
+            //        TorrentManager manager1 = new TorrentManager(InfoHash.FromHex(hash), downloadsPath, torrentDefaults, torrentsPath, trackers); //new List<RawTrackerTier>()); //new TorrentManager(torrent, downloadsPath, torrentDefaults);
+            //                                                                                                                                                        //    manager1.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.ToHex ()]));
+            //        engine.Register(manager1);
 
-                    torrents.Add(manager1);
-                    manager1.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
-                }
-            }
+            //        torrents.Add(manager1);
+            //        manager1.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+            //    }
+            //}
 
             // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
             // the client again
