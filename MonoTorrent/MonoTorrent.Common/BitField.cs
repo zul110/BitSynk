@@ -33,19 +33,47 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using MonoTorrent.Client;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace MonoTorrent.Common
 {
     /// <summary>
     /// This class is for represting the Peer's bitfield
     /// </summary>
-    public class BitField : ICloneable, IEnumerable<bool>
-    {
+    public class BitField : ICloneable, IEnumerable<bool>, INotifyPropertyChanged {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
+            if(PropertyChanged != null) {
+                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            }
+        }
+
+        public event EventHandler OnPropertyChanged;
+        private void RaisePropertyChanged(string property) {
+            if(OnPropertyChanged != null) {
+                OnPropertyChanged(this, new PropertyChangedEventArgs(property));
+            }
+        }
+
         #region Member Variables
 
         private int[] array;
         private int length;
         private int trueCount;
+
+        public int TrueCount
+        {
+            get
+            {
+                return trueCount;
+            }
+            set
+            {
+                trueCount = value;
+                RaisePropertyChanged("PercentComplete");
+            }
+        }
 
         internal bool AllFalse
         {
@@ -64,7 +92,27 @@ namespace MonoTorrent.Common
 
         public double PercentComplete
         {
-            get { return (double)this.trueCount / this.length * 100.0; }
+            get {
+                double complete = (double)this.trueCount / this.length * 100.0;
+                UIPercentComplete = complete;
+                return complete;
+            }
+        }
+
+        private double uiPercentComplete;
+        public double UIPercentComplete
+        {
+            get
+            {
+                return uiPercentComplete;
+            }
+
+            set
+            {
+                uiPercentComplete = value;
+                NotifyPropertyChanged();
+                NotifyPropertyChanged();
+            }
         }
 
         #endregion
@@ -122,7 +170,7 @@ namespace MonoTorrent.Common
         {
             Check(value);
             Buffer.BlockCopy(value.array, 0, array, 0, array.Length * 4);
-            trueCount = value.trueCount;
+            TrueCount = value.trueCount;
             return this;
         }
 
@@ -131,7 +179,7 @@ namespace MonoTorrent.Common
             for (int i = 0; i < this.array.Length; i++)
                 this.array[i] = ~this.array[i];
 
-            this.trueCount = this.length - this.trueCount;
+            this.TrueCount = this.length - this.trueCount;
             return this;
         }
 
@@ -319,13 +367,13 @@ namespace MonoTorrent.Common
             if (value)
             {
                 if ((this.array[index >> 5] & (1 << (31 - (index & 31)))) == 0)// If it's not already true
-                    trueCount++;                                        // Increase true count
+                    TrueCount++;                                        // Increase true count
                 this.array[index >> 5] |= (1 << (31 - index & 31));
             }
             else
             {
                 if ((this.array[index >> 5] & (1 << (31 - (index & 31)))) != 0)// If it's not already false
-                    trueCount--;                                        // Decrease true count
+                    TrueCount--;                                        // Decrease true count
                 this.array[index >> 5] &= ~(1 << (31 - (index & 31)));
             }
 
@@ -359,7 +407,7 @@ namespace MonoTorrent.Common
             {
                 for (int i = 0; i < this.array.Length; i++)
                     this.array[i] = 0;
-                this.trueCount = 0;
+                this.TrueCount = 0;
             }
 
             return this;
@@ -407,11 +455,6 @@ namespace MonoTorrent.Common
             return sb.ToString(0, sb.Length - 1);
         }
 
-        public int TrueCount
-        {
-            get { return this.trueCount; }
-        }
-
         void Validate()
         {
             ZeroUnusedBits();
@@ -425,7 +468,7 @@ namespace MonoTorrent.Common
                 v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
                 count += (((v + (v >> 4) & 0xF0F0F0F) * 0x1010101)) >> 24;
             }
-            trueCount = (int)count ;
+            TrueCount = (int)count ;
         }
 
         void ZeroUnusedBits()

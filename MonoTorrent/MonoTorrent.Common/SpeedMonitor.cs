@@ -28,12 +28,20 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace MonoTorrent.Common
 {
-    public class SpeedMonitor
-    {
+    public class SpeedMonitor : INotifyPropertyChanged {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
+            if(PropertyChanged != null) {
+                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            }
+        }
+
         private const int DefaultAveragePeriod = 12;
 
         private long total;
@@ -47,6 +55,11 @@ namespace MonoTorrent.Common
         public int Rate
         {
             get { return this.speed; }
+            set
+            {
+                speed = value;
+                NotifyPropertyChanged();
+            }
         }
 
         public long Total

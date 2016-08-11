@@ -36,6 +36,8 @@ using System.Security.Cryptography;
 using MonoTorrent.BEncoding;
 using System.Collections;
 using System.Net;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace MonoTorrent.Common
 {
@@ -43,8 +45,15 @@ namespace MonoTorrent.Common
     /// The "Torrent" class for both Tracker and Client should inherit from this
     /// as it contains the fields that are common to both.
     /// </summary>
-    public class Torrent : IEquatable<Torrent>
+    public class Torrent : IEquatable<Torrent>, INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
+            if(PropertyChanged != null) {
+                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            }
+        }
+
         #region Private Fields
 
         private BEncodedDictionary originalDictionary;
@@ -193,7 +202,9 @@ namespace MonoTorrent.Common
         public string Name
         {
             get { return this.name; }
-            private set { this.name = value; }
+            private set {
+                this.name = value;
+                NotifyPropertyChanged(); }
         }
 
 
@@ -257,7 +268,10 @@ namespace MonoTorrent.Common
         public long Size
         {
             get { return this.size; }
-            private set { this.size = value; }
+            private set {
+                this.size = value;
+                NotifyPropertyChanged();
+            }
         }
 
 
@@ -276,7 +290,10 @@ namespace MonoTorrent.Common
         public string TorrentPath
         {
             get { return this.torrentPath; }
-            internal set { torrentPath = value; }
+            internal set {
+                torrentPath = value;
+                NotifyPropertyChanged();
+            }
         }
 
         /// <summary>

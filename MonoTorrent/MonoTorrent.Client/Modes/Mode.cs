@@ -37,11 +37,21 @@ using MonoTorrent.Client.Messages.Libtorrent;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using MonoTorrent.BEncoding;
+using System.Runtime.CompilerServices;
+using System.ComponentModel;
 
 namespace MonoTorrent.Client
 {
-    abstract class Mode
+    abstract class Mode : INotifyPropertyChanged
     {
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
+            if(PropertyChanged != null) {
+                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            }
+        }
+
         int webseedCount;
         private TorrentManager manager;
 
@@ -53,6 +63,11 @@ namespace MonoTorrent.Client
         protected TorrentManager Manager
         {
             get { return manager; }
+            set
+            {
+                manager = value;
+                NotifyPropertyChanged();
+            }
         }
 
         protected Mode(TorrentManager manager)

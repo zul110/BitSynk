@@ -1,15 +1,79 @@
 ﻿<pages:BasePage x:Class="BitSynk.Pages.HomePage"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:pages="clr-namespace:BitSynk.Pages"
-      xmlns:local="clr-namespace:BitSynk.Pages"
-      mc:Ignorable="d"
-      Title="HomePage"
-      Loaded="Page_Loaded">
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:pages="clr-namespace:BitSynk.Pages"
+                xmlns:local="clr-namespace:BitSynk.Pages"
+                mc:Ignorable="d"
+                Title="HomePage"
+                Loaded="Page_Loaded">
 
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Grid HorizontalAlignment="Stretch"
+              Margin="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="Add file:"
+                       VerticalAlignment="Center"/>
+
+            <TextBox x:Name="fileBox"
+                     MinHeight="30"
+                     FontSize="20"
+                     Margin="6,0,0,0"
+                     Grid.Column="1"
+                     HorizontalAlignment="Stretch"/>
+            <Button x:Name="browseButton"
+                    Padding="6"
+                    Margin="6,0,0,0"
+                    MinHeight="30"
+                    Grid.Column="2"
+                Content="Browse..." />
+        </Grid>
+
+
+        <Button x:Name="linkButton"
+                MinHeight="30"
+                Padding="6"
+                Margin="6,6,6,0"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Top"
+                Grid.Column="1"
+                Content="Link"
+                Click="linkButton_Click" />
+
+        <DataGrid x:Name="homeDataGrid"
+                  Grid.Row="1"
+                  Grid.ColumnSpan="2"
+                  AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Torrent Name"
+                                    Binding="{Binding Name}" />
+                <DataGridTextColumn Header="Status"
+                                    Binding="{Binding State}" />
+                <DataGridTextColumn Header="% Completed"
+                                    Binding="{Binding Progress}" />
+                <DataGridTextColumn Header="Download Speed (kb/s)"
+                                    Binding="{Binding DownloadSpeed}" />
+                <DataGridTextColumn Header="Upload Speed (kb/s)"
+                                    Binding="{Binding UploadSpeed}" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+
     </Grid>
 </pages:BasePage>

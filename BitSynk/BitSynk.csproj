@@ -60,6 +60,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Helpers\Trackers.cs" />
+    <Compile Include="Models\BaseModel.cs" />
+    <Compile Include="Models\BitSynkTorrentModel.cs" />
     <Compile Include="Pages\BasePage.cs" />
     <Compile Include="Pages\HomePage.xaml.cs">
       <DependentUpon>HomePage.xaml</DependentUpon>
@@ -153,7 +155,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Models\" />
     <Folder Include="Windows\" />
   </ItemGroup>
   <ItemGroup>

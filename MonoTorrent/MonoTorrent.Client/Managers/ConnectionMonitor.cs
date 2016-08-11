@@ -31,14 +31,23 @@
 using System;
 using System.Net.Sockets;
 using MonoTorrent.Common;
+using System.Runtime.CompilerServices;
+using System.ComponentModel;
 
 namespace MonoTorrent.Client
 {
     /// <summary>
     /// This class is used to track upload/download speed and bytes uploaded/downloaded for each connection
     /// </summary>
-    public class ConnectionMonitor
+    public class ConnectionMonitor : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
+            if(PropertyChanged != null) {
+                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            }
+        }
+
         #region Member Variables
 
         private SpeedMonitor dataDown;
@@ -59,12 +68,16 @@ namespace MonoTorrent.Client
 
         public long DataBytesUploaded
         {
-            get { return dataUp.Total; }
+            get { return DataUp.Total; }
         }
 
         public int DownloadSpeed
         {
-            get { return dataDown.Rate + protocolDown.Rate; }
+            get {
+                int downloadRate = dataDown.Rate + protocolDown.Rate;
+                NotifyPropertyChanged();
+                return downloadRate;
+            }
         }
 
         public long ProtocolBytesDownloaded
@@ -74,12 +87,44 @@ namespace MonoTorrent.Client
 
         public long ProtocolBytesUploaded
         {
-            get { return protocolUp.Total; }
+            get { return ProtocolUp.Total; }
         }
 
         public int UploadSpeed
         {
-            get { return dataUp.Rate + protocolUp.Rate; }
+            get {
+                int uploadSpeed = DataUp.Rate + ProtocolUp.Rate;
+                NotifyPropertyChanged();
+                return uploadSpeed;
+            }
+        }
+
+        public SpeedMonitor DataUp
+        {
+            get
+            {
+                return dataUp;
+            }
+
+            set
+            {
+                dataUp = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        public SpeedMonitor ProtocolUp
+        {
+            get
+            {
+                return protocolUp;
+            }
+
+            set
+            {
+                protocolUp = value;
+                NotifyPropertyChanged();
+            }
         }
 
         #endregion Public Properties
@@ -96,9 +141,9 @@ namespace MonoTorrent.Client
         internal ConnectionMonitor(int averagingPeriod)
         {
             dataDown = new SpeedMonitor(averagingPeriod);
-            dataUp = new SpeedMonitor(averagingPeriod);
+            DataUp = new SpeedMonitor(averagingPeriod);
             protocolDown = new SpeedMonitor(averagingPeriod);
-            protocolUp = new SpeedMonitor(averagingPeriod);
+            ProtocolUp = new SpeedMonitor(averagingPeriod);
         }
 
         #endregion
@@ -111,9 +156,9 @@ namespace MonoTorrent.Client
             lock (locker)
             {
                 if (type == TransferType.Data)
-                    dataUp.AddDelta(bytesUploaded);
+                    DataUp.AddDelta(bytesUploaded);
                 else
-                    protocolUp.AddDelta(bytesUploaded);
+                    ProtocolUp.AddDelta(bytesUploaded);
             }
         }
 
@@ -133,9 +178,9 @@ namespace MonoTorrent.Client
             lock (locker)
             {
                 dataDown.Reset();
-                dataUp.Reset();
+                DataUp.Reset();
                 protocolDown.Reset();
-                protocolUp.Reset();
+                ProtocolUp.Reset();
             }
         }
 
@@ -144,9 +189,9 @@ namespace MonoTorrent.Client
             lock (locker)
             {
                 dataDown.Tick();
-                dataUp.Tick();
+                DataUp.Tick();
                 protocolDown.Tick();
-                protocolUp.Tick();
+                ProtocolUp.Tick();
             }
         }
 

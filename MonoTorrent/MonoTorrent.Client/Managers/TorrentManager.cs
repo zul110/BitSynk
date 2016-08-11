@@ -42,11 +42,19 @@ using MonoTorrent.Client.Messages;
 using MonoTorrent.Client.Messages.Standard;
 using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace MonoTorrent.Client
 {
-    public class TorrentManager : IDisposable, IEquatable<TorrentManager>
-    {
+    public class TorrentManager : IDisposable, IEquatable<TorrentManager>, INotifyPropertyChanged {
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
+            if(PropertyChanged != null) {
+                PropertyChanged(this, new PropertyChangedEventArgs(property));
+            }
+        }
+        
         #region Events
 
         public event EventHandler<PeerConnectionEventArgs> PeerConnected;
@@ -104,7 +112,9 @@ namespace MonoTorrent.Client
         public BitField Bitfield
         {
             get { return this.bitfield; }
-            internal set { bitfield = value; }
+            internal set {
+                bitfield = value;
+            }
         }
 
         public bool CanUseDht
@@ -125,13 +135,19 @@ namespace MonoTorrent.Client
         public ClientEngine Engine
         {
             get { return this.engine; }
-            internal set { this.engine = value; }
+            internal set {
+                this.engine = value;
+                NotifyPropertyChanged();
+            }
         }
 
         public Error Error
         {
             get { return error; }
-            internal set { error = value; }
+            internal set {
+                error = value;
+                NotifyPropertyChanged();
+            }
         }
 
         internal Mode Mode
@@ -143,7 +159,9 @@ namespace MonoTorrent.Client
                 if (oldMode != null)
                     RaiseTorrentStateChanged(new TorrentStateChangedEventArgs(this, oldMode.State, mode.State));
                 mode.Tick(0);
-			}
+
+                NotifyPropertyChanged();
+            }
         }
 
         public int PeerReviewRoundsComplete
@@ -161,7 +179,10 @@ namespace MonoTorrent.Client
         public bool HashChecked
         {
             get { return this.hashChecked; }
-            internal set { this.hashChecked = value; }
+            internal set {
+                this.hashChecked = value;
+                NotifyPropertyChanged();
+            }
         }
 
         public int HashFails
@@ -212,7 +233,10 @@ namespace MonoTorrent.Client
 		public PieceManager PieceManager
 		{
 			get { return this.pieceManager; }
-            internal set { pieceManager = value; }
+            internal set {
+                pieceManager = value;
+                NotifyPropertyChanged();
+            }
 		}
 
 
@@ -230,7 +254,32 @@ namespace MonoTorrent.Client
         /// </summary>
         public double Progress
         {
-            get { return (this.bitfield.PercentComplete); }
+            get {
+                double complete = (this.bitfield.PercentComplete);
+                UIProgress = complete;
+                return complete;
+            }
+        }
+
+        private double uiProgress;
+        public double UIProgress
+        {
+            get
+            {
+                return uiProgress;
+            }
+
+            set
+            {
+                uiProgress = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private void Bitfield_PropertyChanged(object sender, EventArgs e) {
+            if((e as PropertyChangedEventArgs).PropertyName == "PercentComplete") {
+                PropertyChanged(this, new PropertyChangedEventArgs("Progress"));
+            }
         }
 
 
@@ -251,15 +300,27 @@ namespace MonoTorrent.Client
             get { return this.settings; }
         }
 
-
+        private TorrentState state;
         /// <summary>
         /// The current state of the TorrentManager
         /// </summary>
         public TorrentState State
         {
             get { return mode.State; }
+            set
+            {
+                state = value;
+                NotifyPropertyChanged();
+            }
         }
 
+        public string StateString
+        {
+            get
+            {
+                return State.ToString();
+            }
+        }
 
         /// <summary>
         /// The time the torrent manager was started at
@@ -285,7 +346,10 @@ namespace MonoTorrent.Client
         public Torrent Torrent
         {
             get { return this.torrent; }
-            internal set { torrent = value; }
+            internal set {
+                torrent = value;
+                NotifyPropertyChanged();
+            }
         }
 
 
@@ -295,7 +359,10 @@ namespace MonoTorrent.Client
         public int UploadingTo
         {
             get { return this.uploadingTo; }
-            internal set { this.uploadingTo = value; }
+            internal set {
+                this.uploadingTo = value;
+                NotifyPropertyChanged();
+            }
         }
 
         internal RateLimiterGroup UploadLimiter

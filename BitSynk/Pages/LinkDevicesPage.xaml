@@ -11,13 +11,27 @@
 
     <Grid>
         <StackPanel VerticalAlignment="Center"
-                    HorizontalAlignment="Center">
+                    HorizontalAlignment="Stretch"
+                    MaxWidth="250"
+                    Margin="24">
+
+            <TextBlock Text="Please enter the 5 digit code below to link this device with your main device."
+                       TextWrapping="Wrap"
+                       TextAlignment="Center" />
+
+            <TextBlock Text="Code"
+                       Margin="0,24,0,0"
+                       FontSize="10" />
+
             <TextBox x:Name="userCodeBox"
+                     FontSize="20"
                      MaxLength="5"
+                     HorizontalContentAlignment="Center"
+                     Margin="0,0,0,0"
                      MinHeight="30"/>
             
             <Button x:Name="linkButton"
-                    Margin="0,6,0,0"
+                    Margin="0,12,0,0"
                     Content="Link"
                     Padding="12,6"
                     Click="linkButton_Click" />
