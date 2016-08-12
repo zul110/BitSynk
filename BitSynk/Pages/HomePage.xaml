@@ -13,6 +13,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition />
+            <RowDefinition />
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
@@ -56,10 +57,11 @@
                 Content="Link"
                 Click="linkButton_Click" />
 
-        <DataGrid x:Name="homeDataGrid"
+        <DataGrid x:Name="torrentsDataGrid"
                   Grid.Row="1"
                   Grid.ColumnSpan="2"
-                  AutoGenerateColumns="False">
+                  AutoGenerateColumns="False"
+                  SelectionChanged="torrentsDataGrid_SelectionChanged">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Torrent Name"
                                     Binding="{Binding Name}" />
@@ -74,6 +76,21 @@
             </DataGrid.Columns>
         </DataGrid>
 
-
+        <DataGrid x:Name="peerDataGrid"
+                  Grid.Row="2"
+                  Grid.ColumnSpan="2"
+                  AutoGenerateColumns="False"
+                  SelectionChanged="torrentsDataGrid_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Connection URI"
+                                    Binding="{Binding ConnectionUri}" />
+                <DataGridTextColumn Header="Pieces Count"
+                                    Binding="{Binding PiecesCount}" />
+                <DataGridTextColumn Header="Download Speed (kb/s)"
+                                    Binding="{Binding DownloadSpeed}" />
+                <DataGridTextColumn Header="Upload Speed (kb/s)"
+                                    Binding="{Binding UploadSpeed}" />
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </pages:BasePage>

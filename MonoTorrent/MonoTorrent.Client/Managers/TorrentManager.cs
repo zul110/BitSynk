@@ -44,6 +44,8 @@ using MonoTorrent.Client.Connections;
 using MonoTorrent.Client.Encryption;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using MonoTorrent.BitSynkModels;
+using System.Collections.ObjectModel;
 
 namespace MonoTorrent.Client
 {

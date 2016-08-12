@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -55,6 +56,25 @@ namespace BitSynk.Models {
             set
             {
                 uploadSpeed = value;
+                NotifyPropertyChanged();
+            }
+        }
+
+        private ObservableCollection<BitSynkPeerModel> bitSynkPeers;
+        public ObservableCollection<BitSynkPeerModel> BitSynkPeers
+        {
+            get
+            {
+                if(bitSynkPeers == null) {
+                    bitSynkPeers = new ObservableCollection<BitSynkPeerModel>();
+                }
+
+                return bitSynkPeers;
+            }
+
+            set
+            {
+                bitSynkPeers = value;
                 NotifyPropertyChanged();
             }
         }

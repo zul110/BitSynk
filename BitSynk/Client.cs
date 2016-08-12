@@ -337,6 +337,8 @@ namespace BitSynk {
                             }));
                         }
 
+                        PeerChanged();
+
                         AppendSeperator(sb);
                         AppendFormat(sb, "State:           {0}", manager.State);
                         AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
@@ -352,11 +354,30 @@ namespace BitSynk {
                         if(manager.PieceManager != null)
                             AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
 
-                        foreach(PeerId p in manager.GetPeers())
+                        foreach(PeerId p in manager.GetPeers()) {
+                            BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
+                            if(bitSynkPeer == null) {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                    bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
+                                        ConnectionUri = p.Peer.ConnectionUri,
+                                        DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
+                                        UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
+                                        PiecesCount = p.AmRequestingPiecesCount
+                                    });
+                                }));
+                            } else {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                    bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
+                                    bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
+                                    bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
+                                }));
+                            }
+
                             AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
                                                                                       p.Monitor.DownloadSpeed / 1024.0,
                                                                                       p.AmRequestingPiecesCount,
                                                                                       p.Monitor.UploadSpeed / 1024.0);
+                        }
 
                         AppendFormat(sb, "", null);
                         if(manager.Torrent != null)
@@ -404,9 +425,8 @@ namespace BitSynk {
                 fastResume.Add(torrents[i].Torrent.InfoHash.ToHex(), torrents[i].SaveFastResume().Encode());
             }
 
-#if !DISABLE_DHT
             File.WriteAllBytes(dhtNodeFile, engine.DhtEngine.SaveNodes());
-#endif
+
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();
 
@@ -422,6 +442,13 @@ namespace BitSynk {
         private void TorrentsAdded() {
             if(OnTorrentsAdded != null) {
                 OnTorrentsAdded(this, new EventArgs());
+            }
+        }
+
+        public event EventHandler OnPeerChanged;
+        private void PeerChanged() {
+            if(OnPeerChanged != null) {
+                OnPeerChanged(this, new EventArgs());
             }
         }
     }

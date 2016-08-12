@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BitSynk.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -55,6 +56,7 @@ namespace BitSynk.Pages {
 
             client = new Client(parameter);
             client.OnTorrentsAdded += Client_OnTorrentsAdded;
+            client.OnPeerChanged += Client_OnPeerChanged;
 
             BackgroundWorker bw = new BackgroundWorker();
 
@@ -71,15 +73,36 @@ namespace BitSynk.Pages {
             bw.RunWorkerAsync();
         }
 
+        private void Client_OnPeerChanged(object sender, EventArgs e) {
+            try {
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                    if(torrentsDataGrid.SelectedItem != null) {
+                        var peers = (torrentsDataGrid.SelectedItem as BitSynkTorrentModel).BitSynkPeers;
+
+                        peerDataGrid.ItemsSource = peers;
+                    }
+                }));
+            } catch(Exception ex) {
+
+            }
+        }
+
         private void Client_OnTorrentsAdded(object sender, EventArgs e) {
             var torrents = (sender as Client).BitSynkTorrents;
+
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                homeDataGrid.ItemsSource = torrents;
+                torrentsDataGrid.ItemsSource = torrents;
             }));
         }
 
         private void linkButton_Click(object sender, RoutedEventArgs e) {
             GoToPage(new LinkDevicesPage());
+        }
+
+        private void torrentsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            //var torrent = (sender as DataGrid).SelectedItem as BitSynk.Models.BitSynkTorrentModel;
+
+            //var peers = torrent.BitSynkPeers;
         }
     }
 }

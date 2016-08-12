@@ -97,6 +97,8 @@
     <Compile Include="BanLists\BanList.cs" />
     <Compile Include="BanLists\ListParser.cs" />
     <Compile Include="BanLists\RangeCollection.cs" />
+    <Compile Include="BitSynkModels\BaseModel.cs" />
+    <Compile Include="BitSynkModels\BitSynkPeerModel.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\LocalPeerListener.cs" />
     <Compile Include="MonoTorrent.Client\ConnectionListeners\UdpListener.cs" />
     <Compile Include="MonoTorrent.Client\EventArgs\LocalPeersAdded.cs" />
