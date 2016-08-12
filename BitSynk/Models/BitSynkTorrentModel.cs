@@ -17,6 +17,17 @@ namespace BitSynk.Models {
             }
         }
 
+        private string hash;
+        public string Hash
+        {
+            get { return hash; }
+            set
+            {
+                hash = value;
+                NotifyPropertyChanged();
+            }
+        }
+
         private string state;
         public string State
         {

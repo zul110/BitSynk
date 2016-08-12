@@ -401,6 +401,25 @@ namespace DatabaseManager
             return false;
         }
 
+        public async Task<bool> RemoveFileByHashAsync(string fileHash) {
+            if(await FileHashExistsAsync(fileHash)) {
+                using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                    connection.Open();
+
+                    MySqlCommand deleteCommand = new MySqlCommand("DELETE FROM FILES WHERE FILE_HASH = @fileHash", connection);
+                    deleteCommand.Parameters.AddWithValue("@fileHash", fileHash);
+
+                    await AddFileToRemoveQueueAsync(await GetFileByHashAsync(fileHash));
+
+                    int result = await deleteCommand.ExecuteNonQueryAsync();
+
+                    return result > 0 ? true : false;
+                }
+            }
+
+            return false;
+        }
+
         public async Task<bool> FileIdExistsAsync(string fileId, string userId) {
             return await GetUserFileByIdAsync(fileId, userId) == null ? false : true;
         }
@@ -513,6 +532,58 @@ namespace DatabaseManager
                     }
 
                     return file;
+                }
+            }
+        }
+
+        public async Task<bool> AddFileToRemoveQueueAsync(File file) {
+            string fileId = file.FileId;
+            string fileName = file.FileName;
+            string fileHash = file.FileHash;
+            string userId = file.UserId;
+
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO FILES_TO_REMOVE (FILE_ID, FILE_NAME, FILE_HASH, USER_ID) VALUES (@fileId, @fileName, @fileHash, @userId)", connection);
+                insertCommand.Parameters.AddWithValue("@fileId", fileId);
+                insertCommand.Parameters.AddWithValue("@fileName", fileName);
+                insertCommand.Parameters.AddWithValue("@fileHash", fileHash);
+                insertCommand.Parameters.AddWithValue("@userId", userId);
+
+                int result = await insertCommand.ExecuteNonQueryAsync();
+
+                return result > 0 ? true : false;
+            }
+        }
+
+        public async Task<List<File>> GetFilesToRemoveAsync(string _userId) {
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM FILES_TO_REMOVE WHERE USER_ID = @userId", connection);
+                selectCommand.Parameters.AddWithValue("@userId", _userId);
+
+                using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
+                    List<File> files = new List<File>();
+
+                    while(reader.Read()) {
+                        string fileId = reader["FILE_ID"].ToString();
+                        string fileName = reader["FILE_NAME"].ToString();
+                        string fileHash = reader["FILE_HASH"].ToString();
+                        string userId = reader["USER_ID"].ToString();
+
+                        File file = new File();
+                        file.FileId = fileId;
+                        file.FileName = fileName;
+                        file.FileHash = fileHash;
+                        file.UserId = userId;
+                        //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
+
+                        files.Add(file);
+                    }
+
+                    return files;
                 }
             }
         }

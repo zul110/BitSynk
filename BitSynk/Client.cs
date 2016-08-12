@@ -327,6 +327,7 @@ namespace BitSynk {
                             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
                                 BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
                                     Name = manager.Torrent.Name,
+                                    Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
                                     Progress = manager.Progress,
                                     State = manager.State.ToString(),
                                     DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using BitSynk.Models;
 
 namespace BitSynk.ViewModels {
     public class FileTrackerViewModel : BaseViewModel {
@@ -87,6 +88,24 @@ namespace BitSynk.ViewModels {
             } catch(Exception ex) {
                 throw ex;
             }
+        }
+
+        public void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
+            DeleteFileLocally(bitSynkTorrentModel);
+            DeleteTorrent(bitSynkTorrentModel);
+            DeleteFileFromDatabase(bitSynkTorrentModel);
+        }
+
+        private async void DeleteFileFromDatabase(BitSynkTorrentModel bitSynkTorrentModel) {
+            await new FileManager().RemoveFileByHashAsync(bitSynkTorrentModel.Hash);
+        }
+
+        private void DeleteTorrent(BitSynkTorrentModel bitSynkTorrentModel) {
+            File.Delete(Settings.FILES_DIRECTORY + "//" + Path.GetFileNameWithoutExtension(bitSynkTorrentModel.Name) + ".torrent");
+        }
+
+        private void DeleteFileLocally(BitSynkTorrentModel bitSynkTorrentModel) {
+            File.Delete(Settings.FILES_DIRECTORY + "//" + bitSynkTorrentModel.Name);
         }
     }
 }

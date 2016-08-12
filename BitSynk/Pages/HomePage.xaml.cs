@@ -1,5 +1,6 @@
 ﻿using BitSynk.Helpers;
 using BitSynk.Models;
+using BitSynk.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -154,7 +155,9 @@ namespace BitSynk.Pages {
         }
 
         private void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
-            
+            new FileTrackerViewModel().RemoveFile(bitSynkTorrentModel);
+
+            client.BitSynkTorrents.Remove(client.BitSynkTorrents.Where(t => t.Hash == bitSynkTorrentModel.Hash).FirstOrDefault());
         }
     }
 }
