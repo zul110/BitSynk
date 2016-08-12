@@ -42,17 +42,31 @@ namespace BitSynk.ViewModels {
             string hash = "";
 
             List<string> files = Directory.GetFiles(Settings.FILES_DIRECTORY).ToList();
+            List<string> directories = Directory.GetDirectories(Settings.FILES_DIRECTORY).ToList();
 
             if(files != null && files.Count > 0) {
                 foreach(string file in files) {
-                    if(!file.Contains("fastresume.data")) {
+                    if(!file.Contains("fastresume.data") && !file.EndsWith(".torrent")) {
                         string torrentPath = Utils.CreateTorrent(file, Settings.FILES_DIRECTORY);
                         hash = Utils.GetTorrentInfoHash(torrentPath);
 
-                        if(!knownFiles.Contains(hash) && !file.EndsWith(".torrent")) {
+                        if(!knownFiles.Contains(hash)) {
                             if(!(await (new FileManager().FileHashExistsAsync(hash)))) {
                                 AddFileToDatabase(file, hash, torrentPath);
                             }
+                        }
+                    }
+                }
+            }
+
+        if(directories != null && directories.Count > 0) {
+            foreach(string directory in directories) {
+                    string torrentPath = Utils.CreateTorrent(directory, Settings.FILES_DIRECTORY);
+                    hash = Utils.GetTorrentInfoHash(torrentPath);
+
+                    if(!knownFiles.Contains(hash)) {
+                        if(!(await (new FileManager().FileHashExistsAsync(hash)))) {
+                            AddFileToDatabase(directory, hash, torrentPath);
                         }
                     }
                 }

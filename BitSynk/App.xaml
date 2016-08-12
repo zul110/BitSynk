@@ -2,8 +2,15 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:BitSynk"
+             xmlns:converters="clr-namespace:BitSynk.Converters"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                
+            </ResourceDictionary.MergedDictionaries>
+            
+            <converters:IntToBoolConverter x:Key="intToBoolConverter" />
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

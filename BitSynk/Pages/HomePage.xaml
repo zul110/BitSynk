@@ -27,6 +27,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <TextBlock Text="Add file:"
@@ -38,19 +39,30 @@
                      Margin="6,0,0,0"
                      Grid.Column="1"
                      HorizontalAlignment="Stretch"/>
-            <Button x:Name="browseButton"
+
+            <Button x:Name="addFileButton"
                     Padding="6"
                     Margin="6,0,0,0"
                     MinHeight="30"
                     Grid.Column="2"
-                Content="Browse..." />
+                    Content="Add"
+                    IsEnabled="{Binding ElementName=fileBox, Path=Text.Length, Converter={StaticResource intToBoolConverter}}"
+                    Click="addButton_Click" />
+
+            <Button x:Name="browseButton"
+                    Padding="6"
+                    Margin="6,0,0,0"
+                    MinHeight="30"
+                    Grid.Column="3"
+                    Content="Browse..."
+                    Click="browseButton_Click"/>
         </Grid>
 
 
         <Button x:Name="linkButton"
                 MinHeight="30"
                 Padding="6"
-                Margin="6,6,6,0"
+                Margin="0,6,6,0"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Top"
                 Grid.Column="1"
@@ -60,8 +72,18 @@
         <DataGrid x:Name="torrentsDataGrid"
                   Grid.Row="1"
                   Grid.ColumnSpan="2"
+                  IsReadOnly="True"
                   AutoGenerateColumns="False"
+                  MouseDoubleClick="torrentsDataGrid_MouseDoubleClick"
                   SelectionChanged="torrentsDataGrid_SelectionChanged">
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem x:Name="removeMenuItem"
+                              Header="Remove"
+                              Click="removeMenuItem_Click" />
+                </ContextMenu>
+            </DataGrid.ContextMenu>
+            
             <DataGrid.Columns>
                 <DataGridTextColumn Header="Torrent Name"
                                     Binding="{Binding Name}" />
@@ -76,21 +98,30 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <DataGrid x:Name="peerDataGrid"
-                  Grid.Row="2"
-                  Grid.ColumnSpan="2"
-                  AutoGenerateColumns="False"
-                  SelectionChanged="torrentsDataGrid_SelectionChanged">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Connection URI"
-                                    Binding="{Binding ConnectionUri}" />
-                <DataGridTextColumn Header="Pieces Count"
-                                    Binding="{Binding PiecesCount}" />
-                <DataGridTextColumn Header="Download Speed (kb/s)"
-                                    Binding="{Binding DownloadSpeed}" />
-                <DataGridTextColumn Header="Upload Speed (kb/s)"
-                                    Binding="{Binding UploadSpeed}" />
-            </DataGrid.Columns>
-        </DataGrid>
+        <TabControl Grid.Row="2"
+                    Grid.ColumnSpan="2">
+
+            <TabItem Header="Files">
+                
+            </TabItem>
+
+            <TabItem Header="Peers">
+                <DataGrid x:Name="peerDataGrid"
+                          AutoGenerateColumns="False"
+                          SelectionChanged="torrentsDataGrid_SelectionChanged">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Connection URI"
+                                            Binding="{Binding ConnectionUri}" />
+                        <DataGridTextColumn Header="Pieces Count"
+                                            Binding="{Binding PiecesCount}" />
+                        <DataGridTextColumn Header="Download Speed (kb/s)"
+                                            Binding="{Binding DownloadSpeed}" />
+                        <DataGridTextColumn Header="Upload Speed (kb/s)"
+                                            Binding="{Binding UploadSpeed}" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+
+        </TabControl>
     </Grid>
 </pages:BasePage>

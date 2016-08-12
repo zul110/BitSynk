@@ -120,5 +120,14 @@ namespace BitSynk.Helpers {
 
             return torrentFilePath;
         }
+
+        public static async Task<string> CopyFile(string file) {
+            string filePath = Settings.FILES_DIRECTORY + "\\" + Path.GetFileName(file);
+
+            File.Copy(file, filePath);
+
+            return filePath;
+        }
+
     }
 }

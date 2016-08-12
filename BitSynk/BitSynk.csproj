@@ -59,6 +59,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Converters\IntToBoolConverter.cs" />
     <Compile Include="Helpers\Trackers.cs" />
     <Compile Include="Models\BaseModel.cs" />
     <Compile Include="Models\BitSynkPeerModel.cs" />

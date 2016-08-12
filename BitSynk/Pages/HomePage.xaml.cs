@@ -1,7 +1,10 @@
-﻿using BitSynk.Models;
+﻿using BitSynk.Helpers;
+using BitSynk.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -14,7 +17,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace BitSynk.Pages {
@@ -103,6 +105,56 @@ namespace BitSynk.Pages {
             //var torrent = (sender as DataGrid).SelectedItem as BitSynk.Models.BitSynkTorrentModel;
 
             //var peers = torrent.BitSynkPeers;
+        }
+
+        private void browseButton_Click(object sender, RoutedEventArgs e) {
+            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
+            dlg.ValidateNames = false;
+            dlg.CheckFileExists = false;
+            dlg.CheckPathExists = false;
+            //dlg.FileName = "Document"; // Default file name
+            //dlg.DefaultExt = ".text"; // Default file extension
+            //dlg.Filter = "Torrent files (.torrent)|*.torrent"; // Filter files by extension
+            
+            dlg.FileName = "folder";
+
+            // Show save file dialog box
+            Nullable<bool> result = dlg.ShowDialog();
+
+            // Process save file dialog box results
+            if(result == true) {
+                // Save document
+                string filename = dlg.FileName;
+                if(Path.GetFileName(filename) == "folder") {
+                    fileBox.Text = Path.GetDirectoryName(filename);
+                } else {
+                    fileBox.Text = filename;
+                }
+            }
+        }
+
+        private void addButton_Click(object sender, RoutedEventArgs e) {
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                client.AddNewTorrent(fileBox.Text);
+            }));
+        }
+
+        private void torrentsDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
+            if(torrentsDataGrid.SelectedItem != null) {
+                string directory = Settings.FILES_DIRECTORY;
+                string file = (torrentsDataGrid.SelectedItem as BitSynkTorrentModel).Name;
+                string fullPath = directory + "//" + file;
+
+                Process.Start(directory);
+            }
+        }
+
+        private void removeMenuItem_Click(object sender, RoutedEventArgs e) {
+            RemoveFile(torrentsDataGrid.SelectedItem as BitSynkTorrentModel);
+        }
+
+        private void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
+            
         }
     }
 }
