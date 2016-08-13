@@ -339,7 +339,7 @@ namespace DatabaseManager
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES FILE_NAME = @newFileName WHERE FILE_ID = @fileId AND USER_ID = @userId", connection);
+                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES SET FILE_NAME = @newFileName WHERE FILE_ID = @fileId AND USER_ID = @userId", connection);
                 updateCommand.Parameters.AddWithValue("@fileId", fileId);
                 updateCommand.Parameters.AddWithValue("@userId", userId);
                 updateCommand.Parameters.AddWithValue("@newFileName", newFileName);
@@ -354,7 +354,7 @@ namespace DatabaseManager
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES FILE_NAME = @newFileName WHERE FILE_NAME = @fileName AND USER_ID = @userId", connection);
+                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES SET FILE_NAME = @newFileName WHERE FILE_NAME = @fileName AND USER_ID = @userId", connection);
                 updateCommand.Parameters.AddWithValue("@fileName", fileName);
                 updateCommand.Parameters.AddWithValue("@userId", userId);
                 updateCommand.Parameters.AddWithValue("@newFileName", newFileName);
@@ -594,7 +594,7 @@ namespace DatabaseManager
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES USER_ID = @newUserId WHERE USER_ID = @oldUserId", connection);
+                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES SET USER_ID = @newUserId WHERE USER_ID = @oldUserId", connection);
                 updateCommand.Parameters.AddWithValue("@newUserId", newUserId);
                 updateCommand.Parameters.AddWithValue("@oldUserId", oldUserId);
 
