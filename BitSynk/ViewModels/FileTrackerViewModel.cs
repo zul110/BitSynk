@@ -93,21 +93,20 @@ namespace BitSynk.ViewModels {
         public void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
             DeleteFileLocally(bitSynkTorrentModel.Name);
             DeleteTorrent(bitSynkTorrentModel.Name);
+            //AddFileToRemoveQueue(bitSynkTorrentModel);
             DeleteFileFromDatabase(bitSynkTorrentModel);
-
-            AddFileToRemoveQueue(bitSynkTorrentModel);
         }
 
-        private async void AddFileToRemoveQueue(BitSynkTorrentModel bitSynkTorrentModel) {
-            FileManager fileManager = new FileManager();
+        //private async void AddFileToRemoveQueue(BitSynkTorrentModel bitSynkTorrentModel) {
+        //    FileManager fileManager = new FileManager();
 
-            await fileManager.AddFileToRemoveQueueAsync(new DatabaseManager.Models.File() {
-                FileName = bitSynkTorrentModel.Name,
-                FileHash = bitSynkTorrentModel.Hash,
-                FileId = (await fileManager.GetFileByHashAsync(bitSynkTorrentModel.Hash)).FileId,
-                UserId = Settings.USER_ID
-            });
-        }
+        //    await fileManager.AddFileToRemoveQueueAsync(new DatabaseManager.Models.File() {
+        //        FileName = bitSynkTorrentModel.Name,
+        //        FileHash = bitSynkTorrentModel.Hash,
+        //        FileId = (await fileManager.GetFileByHashAsync(bitSynkTorrentModel.Hash)).FileId,
+        //        UserId = Settings.USER_ID
+        //    });
+        //}
 
         public async void DeleteFileFromDatabase(BitSynkTorrentModel bitSynkTorrentModel) {
             await new FileManager().RemoveFileByHashAsync(bitSynkTorrentModel.Hash);
