@@ -91,21 +91,45 @@ namespace BitSynk.ViewModels {
         }
 
         public void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
-            DeleteFileLocally(bitSynkTorrentModel);
-            DeleteTorrent(bitSynkTorrentModel);
+            DeleteFileLocally(bitSynkTorrentModel.Name);
+            DeleteTorrent(bitSynkTorrentModel.Name);
             DeleteFileFromDatabase(bitSynkTorrentModel);
+
+            AddFileToRemoveQueue(bitSynkTorrentModel);
         }
 
-        private async void DeleteFileFromDatabase(BitSynkTorrentModel bitSynkTorrentModel) {
+        private async void AddFileToRemoveQueue(BitSynkTorrentModel bitSynkTorrentModel) {
+            FileManager fileManager = new FileManager();
+
+            await fileManager.AddFileToRemoveQueueAsync(new DatabaseManager.Models.File() {
+                FileName = bitSynkTorrentModel.Name,
+                FileHash = bitSynkTorrentModel.Hash,
+                FileId = (await fileManager.GetFileByHashAsync(bitSynkTorrentModel.Hash)).FileId,
+                UserId = Settings.USER_ID
+            });
+        }
+
+        public async void DeleteFileFromDatabase(BitSynkTorrentModel bitSynkTorrentModel) {
             await new FileManager().RemoveFileByHashAsync(bitSynkTorrentModel.Hash);
         }
 
-        private void DeleteTorrent(BitSynkTorrentModel bitSynkTorrentModel) {
-            File.Delete(Settings.FILES_DIRECTORY + "//" + Path.GetFileNameWithoutExtension(bitSynkTorrentModel.Name) + ".torrent");
+        public void DeleteTorrent(string fileName) {
+            File.Delete(Settings.FILES_DIRECTORY + "//" + Path.GetFileNameWithoutExtension(fileName) + ".torrent");
         }
 
-        private void DeleteFileLocally(BitSynkTorrentModel bitSynkTorrentModel) {
-            File.Delete(Settings.FILES_DIRECTORY + "//" + bitSynkTorrentModel.Name);
+        public void DeleteFileLocally(string fileName) {
+            File.Delete(Settings.FILES_DIRECTORY + "//" + fileName);
+        }
+
+        public async Task<List<DatabaseManager.Models.File>> GetFilesToRemove(string userId) {
+            return await new FileManager().GetFilesToRemoveAsync(userId);
+        }
+
+        public async Task DeleteFilesInQueue() {
+            foreach(DatabaseManager.Models.File file in await GetFilesToRemove(Settings.USER_ID)) {
+                DeleteFileLocally(file.FileName);
+                DeleteTorrent(file.FileName);
+            }
         }
     }
 }

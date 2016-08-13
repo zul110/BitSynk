@@ -28,6 +28,28 @@ namespace BitSynk.Models {
             }
         }
 
+        //private string fileId;
+        //public string FileId
+        //{
+        //    get { return fileId; }
+        //    set
+        //    {
+        //        fileId = value;
+        //        NotifyPropertyChanged();
+        //    }
+        //}
+
+        //private string userId;
+        //public string UserId
+        //{
+        //    get { return userId; }
+        //    set
+        //    {
+        //        userId = value;
+        //        NotifyPropertyChanged();
+        //    }
+        //}
+
         private string state;
         public string State
         {

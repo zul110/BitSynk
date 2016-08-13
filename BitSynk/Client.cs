@@ -177,6 +177,8 @@ namespace BitSynk {
             FileManager fileManager = new FileManager();
             FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
 
+            await fileTrackerVM.DeleteFilesInQueue();
+
             await fileTrackerVM.CheckForNewFiles();
 
             List<DatabaseManager.Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
@@ -324,23 +326,27 @@ namespace BitSynk {
                     foreach(TorrentManager manager in Torrents) {
                         BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
                         if(bitSynkTorrent == null) {
-                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
-                                    Name = manager.Torrent.Name,
-                                    Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
-                                    Progress = manager.Progress,
-                                    State = manager.State.ToString(),
-                                    DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
-                                    UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
-                                });
-                            }));
+                            if(Application.Current != null) {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                    BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
+                                        Name = manager.Torrent.Name,
+                                        Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
+                                        Progress = manager.Progress,
+                                        State = manager.State.ToString(),
+                                        DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
+                                        UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
+                                    });
+                                }));
+                            }
                         } else {
-                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                bitSynkTorrent.Progress = manager.Progress;
-                                bitSynkTorrent.State = manager.State.ToString();
-                                bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                            }));
+                            if(Application.Current != null) {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                    bitSynkTorrent.Progress = manager.Progress;
+                                    bitSynkTorrent.State = manager.State.ToString();
+                                    bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+                                    bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+                                }));
+                            }
                         }
 
                         PeerChanged();

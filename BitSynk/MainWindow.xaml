@@ -8,7 +8,8 @@
         mc:Ignorable="d"
         Title="MainWindow"
         Height="350"
-        Width="525">
+        Width="525"
+        WindowState="Maximized">
     <Frame x:Name="mainPage"
            Source="/Pages/MainPage.xaml"/>
 </Window>
