@@ -589,5 +589,19 @@ namespace DatabaseManager
                 }
             }
         }
+
+        public async Task<bool> ChangeFileUser(string newUserId, string oldUserId) {
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES USER_ID = @newUserId WHERE USER_ID = @oldUserId", connection);
+                updateCommand.Parameters.AddWithValue("@newUserId", newUserId);
+                updateCommand.Parameters.AddWithValue("@oldUserId", oldUserId);
+
+                int result = await updateCommand.ExecuteNonQueryAsync();
+
+                return result > 0 ? true : false;
+            }
+        }
     }
 }

@@ -122,6 +122,7 @@ namespace BitSynk.ViewModels {
                 // Remove the temporary user data from the database and locally
                 // Add the user's data to the local storage
                 if(await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), user.UserId, DeviceStatus.Online)) {
+                    await new FileManager().ChangeFileUser(user.UserId, Settings.USER_ID);
                     await new UserManager().RemoveUserAsync(Settings.USER_ID);
 
                     Settings.USER_ID = user.UserId;
