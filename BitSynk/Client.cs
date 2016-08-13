@@ -554,7 +554,7 @@ namespace BitSynk {
 
                     UpdateStats();
                 } catch(Exception ex) {
-
+                    timer.Start();
                 }
             };
 
