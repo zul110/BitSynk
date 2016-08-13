@@ -278,7 +278,7 @@ namespace BitSynk {
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
             foreach(TorrentManager manager in Torrents) {
-                if(!Engine.Torrents.Contains(manager)) {
+                if(Engine.Torrents.Where(t => t.InfoHash.Hash.ToString() == manager.InfoHash.Hash.ToString()).Count() < 1) {
                     // Every time a piece is hashed, this is fired.
                     manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
                         lock(listener)
@@ -441,7 +441,7 @@ namespace BitSynk {
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
                     TorrentManager manager1 = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                    if(!Torrents.Contains(manager1)) {
+                    if(Engine.Torrents.Where(t => t.InfoHash.Hash.ToString() == manager1.InfoHash.Hash.ToString()).Count() < 1) {
                         torrent = manager1.Torrent;
 
                         if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
@@ -699,7 +699,7 @@ namespace BitSynk {
                 // For each torrent manager we loaded and stored in our list, hook into the events
                 // in the torrent manager and start the engine.
                 foreach(TorrentManager manager in Torrents) {
-                    if(!Engine.Torrents.Contains(manager)) {
+                    if(Engine.Torrents.Where(t => t.InfoHash.Hash.ToString() == manager.InfoHash.Hash.ToString()).Count() < 1) {
                         // Every time a piece is hashed, this is fired.
                         manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
                             lock(listener)
