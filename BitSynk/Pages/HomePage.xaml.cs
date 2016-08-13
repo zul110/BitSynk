@@ -104,9 +104,11 @@ namespace BitSynk.Pages {
         private void Client_OnTorrentsAdded(object sender, EventArgs e) {
             var torrents = (sender as Client).BitSynkTorrents;
 
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                torrentsDataGrid.ItemsSource = torrents;
-            }));
+            if(Application.Current != null) {
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                    torrentsDataGrid.ItemsSource = torrents;
+                }));
+            }
         }
 
         private void linkButton_Click(object sender, RoutedEventArgs e) {

@@ -227,52 +227,41 @@ namespace BitSynk {
 
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
-                    //hashes.Add(file.FileHash);
-                    string torrentFilePath = await Utils.CreateFile(file);
+                    if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
+                        //hashes.Add(file.FileHash);
+                        string torrentFilePath = await Utils.CreateFile(file);
 
-                    try {
-                        // Load the .torrent from the file into a Torrent instance
-                        // You can use this to do preprocessing should you need to
-                        torrent = Torrent.Load(torrentFilePath);
-                        Console.WriteLine(torrent.InfoHash.ToString());
-                    } catch(Exception e) {
-                        Console.Write("Couldn't decode {0}: ", file);
-                        Console.WriteLine(e.Message);
-                        continue;
-                    }
-
-                    //fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
-
-                    // When any preprocessing has been completed, you create a TorrentManager
-                    // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                    if(!Torrents.Contains(manager)) {
-                        torrent = manager.Torrent;
-
-                        if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
-                            manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                            //Engine.Register(manager);
+                        try {
+                            // Load the .torrent from the file into a Torrent instance
+                            // You can use this to do preprocessing should you need to
+                            torrent = Torrent.Load(torrentFilePath);
+                            Console.WriteLine(torrent.InfoHash.ToString());
+                        } catch(Exception e) {
+                            Console.Write("Couldn't decode {0}: ", file);
+                            Console.WriteLine(e.Message);
+                            continue;
                         }
 
-                        Torrents.Add(manager);
+                        //fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
 
-                        manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                        // When any preprocessing has been completed, you create a TorrentManager
+                        // which you then register with the engine.
+                        TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                        if(!Torrents.Contains(manager)) {
+                            torrent = manager.Torrent;
+
+                            if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
+                                manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                                //Engine.Register(manager);
+                            }
+
+                            Torrents.Add(manager);
+
+                            manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                        }
                     }
                 }
             }
-
-            //if(torrents == null || torrents.Count < 1) {
-            //    Console.WriteLine("No files to download.");
-            //} else {
-            //    foreach(string hash in hashes) {
-            //        TorrentManager manager1 = new TorrentManager(InfoHash.FromHex(hash), downloadsPath, torrentDefaults, torrentsPath, trackers); //new List<RawTrackerTier>()); //new TorrentManager(torrent, downloadsPath, torrentDefaults);
-            //                                                                                                                                                        //    manager1.LoadFastResume(new FastResume ((BEncodedDictionary)fastResume[torrent.infoHash.ToHex ()]));
-            //        engine.Register(manager1);
-
-            //        torrents.Add(manager1);
-            //        manager1.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
-            //    }
-            //}
 
             // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
             // the client again
@@ -643,7 +632,7 @@ namespace BitSynk {
 
                 List<DatabaseManager.Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
-                BEncodedDictionary fastResume = GetFastResumeFile();
+                //BEncodedDictionary fastResume = GetFastResumeFile();
 
                 // For each file in the torrents path that is a .torrent file, load it into the engine.
                 foreach(string file in Directory.GetFiles(torrentsPath)) {
@@ -666,8 +655,8 @@ namespace BitSynk {
                             // which you then register with the engine.
                             TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
                             torrent = manager.Torrent;
-                            if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                                manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                            //if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                                //manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
                             //Engine.Register(manager);
 
                             // Store the torrent manager in our list so we can access it later
@@ -679,33 +668,35 @@ namespace BitSynk {
 
                 if(filesToDownload != null && filesToDownload.Count > 0) {
                     foreach(var file in filesToDownload) {
-                        string torrentFilePath = await Utils.CreateFile(file);
+                        if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
+                            string torrentFilePath = await Utils.CreateFile(file);
 
-                        try {
-                            // Load the .torrent from the file into a Torrent instance
-                            // You can use this to do preprocessing should you need to
-                            torrent = Torrent.Load(torrentFilePath);
-                            Console.WriteLine(torrent.InfoHash.ToString());
-                        } catch(Exception e) {
-                            Console.Write("Couldn't decode {0}: ", file);
-                            Console.WriteLine(e.Message);
-                            continue;
-                        }
-                        
-                        // When any preprocessing has been completed, you create a TorrentManager
-                        // which you then register with the engine.
-                        TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                        if(!Torrents.Contains(manager)) {
-                            torrent = manager.Torrent;
-
-                            if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
-                                manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                                //Engine.Register(manager);
+                            try {
+                                // Load the .torrent from the file into a Torrent instance
+                                // You can use this to do preprocessing should you need to
+                                torrent = Torrent.Load(torrentFilePath);
+                                Console.WriteLine(torrent.InfoHash.ToString());
+                            } catch(Exception e) {
+                                Console.Write("Couldn't decode {0}: ", file);
+                                Console.WriteLine(e.Message);
+                                continue;
                             }
 
-                            Torrents.Add(manager);
+                            // When any preprocessing has been completed, you create a TorrentManager
+                            // which you then register with the engine.
+                            TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                            if(!Torrents.Contains(manager)) {
+                                torrent = manager.Torrent;
 
-                            manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                                //if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
+                                    //manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                                    //Engine.Register(manager);
+                                //}
+
+                                Torrents.Add(manager);
+
+                                manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                            }
                         }
                     }
                 }
@@ -727,7 +718,7 @@ namespace BitSynk {
                             lock(listener)
                                 listener.WriteLine(string.Format("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
                         };
-
+                        
                         // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
                         manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
                             lock(listener)
@@ -747,6 +738,14 @@ namespace BitSynk {
 
                         // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                         manager.Start();
+                    } else {
+                        if(manager.State == TorrentState.Stopped) {
+                            if(!Engine.Torrents.Contains(manager)) {
+                                Engine.Register(manager);
+                            }
+
+                            manager.Start();
+                        }
                     }
                 }
 

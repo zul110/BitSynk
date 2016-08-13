@@ -56,7 +56,7 @@ namespace MonoTorrent.Client
                 PropertyChanged(this, new PropertyChangedEventArgs(property));
             }
         }
-        
+
         #region Events
 
         public event EventHandler<PeerConnectionEventArgs> PeerConnected;
@@ -647,7 +647,7 @@ namespace MonoTorrent.Client
         /// </summary>
         public void Start()
         {
-            //ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
+            ClientEngine.MainLoop.QueueWait((MainLoopTask)delegate {
                 CheckRegisteredAndDisposed();
 
                 this.engine.Start();
@@ -708,7 +708,7 @@ namespace MonoTorrent.Client
                     pieceManager.Picker.CancelTimedOutRequests();
                     return true;
                 });
-            //});
+            });
         }
 
 #if !DISABLE_DHT
