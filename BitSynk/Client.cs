@@ -267,7 +267,7 @@ namespace BitSynk {
             // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
             // the client again
             if(Torrents.Count == 0) {
-                //Console.WriteLine("No torrents found in the Torrents directory");
+                Console.WriteLine("No torrents found in the Torrents directory");
                 //Console.WriteLine("Exiting...");
                 //Engine.Dispose();
                 //return;
@@ -278,31 +278,33 @@ namespace BitSynk {
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
             foreach(TorrentManager manager in Torrents) {
-                // Every time a piece is hashed, this is fired.
-                manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
-                    lock(listener)
-                        listener.WriteLine(string.Format("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
-                };
+                if(!Engine.Torrents.Contains(manager)) {
+                    // Every time a piece is hashed, this is fired.
+                    manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
+                        lock(listener)
+                            listener.WriteLine(string.Format("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
+                    };
 
-                // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
-                manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
-                    lock(listener)
-                        listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
-                };
+                    // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
+                    manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
+                        lock(listener)
+                            listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
+                    };
 
-                // Every time the tracker's state changes, this is fired
-                foreach(TrackerTier tier in manager.TrackerManager) {
-                    foreach(Tracker t in tier.Trackers) {
-                        t.AnnounceComplete += delegate (object sender, AnnounceResponseEventArgs e) {
-                            listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
-                        };
+                    // Every time the tracker's state changes, this is fired
+                    foreach(TrackerTier tier in manager.TrackerManager) {
+                        foreach(Tracker t in tier.Trackers) {
+                            t.AnnounceComplete += delegate (object sender, AnnounceResponseEventArgs e) {
+                                listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
+                            };
+                        }
                     }
+
+                    Engine.Register(manager);
+
+                    // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
+                    manager.Start();
                 }
-
-                Engine.Register(manager);
-
-                // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                manager.Start();
             }
 
             // While the torrents are still running, print out some stats to the screen.
@@ -623,31 +625,33 @@ namespace BitSynk {
 
                 // For each file in the torrents path that is a .torrent file, load it into the engine.
                 foreach(string file in Directory.GetFiles(torrentsPath)) {
-                    if(file.EndsWith(".torrent")) {
-                        try {
-                            // Load the .torrent from the file into a Torrent instance
-                            // You can use this to do preprocessing should you need to
-                            torrent = Torrent.Load(file);
-                            Console.WriteLine(torrent.InfoHash.ToString());
-                        } catch(Exception e) {
-                            Console.Write("Couldn't decode {0}: ", file);
-                            Console.WriteLine(e.Message);
-                            continue;
+                    if(Torrents.Where(t => t.SavePath == downloadsPath).Count() < 1) {
+                        if(file.EndsWith(".torrent")) {
+                            try {
+                                // Load the .torrent from the file into a Torrent instance
+                                // You can use this to do preprocessing should you need to
+                                torrent = Torrent.Load(file);
+                                Console.WriteLine(torrent.InfoHash.ToString());
+                            } catch(Exception e) {
+                                Console.Write("Couldn't decode {0}: ", file);
+                                Console.WriteLine(e.Message);
+                                continue;
+                            }
+
+                            fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
+
+                            // When any preprocessing has been completed, you create a TorrentManager
+                            // which you then register with the engine.
+                            TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                            torrent = manager.Torrent;
+                            if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                                manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                            //Engine.Register(manager);
+
+                            // Store the torrent manager in our list so we can access it later
+                            Torrents.Add(manager);
+                            manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
                         }
-
-                        fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
-
-                        // When any preprocessing has been completed, you create a TorrentManager
-                        // which you then register with the engine.
-                        TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                        torrent = manager.Torrent;
-                        if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                            manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                        //Engine.Register(manager);
-
-                        // Store the torrent manager in our list so we can access it later
-                        Torrents.Add(manager);
-                        manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
                     }
                 }
 
@@ -695,31 +699,33 @@ namespace BitSynk {
                 // For each torrent manager we loaded and stored in our list, hook into the events
                 // in the torrent manager and start the engine.
                 foreach(TorrentManager manager in Torrents) {
-                    // Every time a piece is hashed, this is fired.
-                    manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
-                        lock(listener)
-                            listener.WriteLine(string.Format("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
-                    };
+                    if(!Engine.Torrents.Contains(manager)) {
+                        // Every time a piece is hashed, this is fired.
+                        manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
+                            lock(listener)
+                                listener.WriteLine(string.Format("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
+                        };
 
-                    // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
-                    manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
-                        lock(listener)
-                            listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
-                    };
+                        // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
+                        manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
+                            lock(listener)
+                                listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
+                        };
 
-                    // Every time the tracker's state changes, this is fired
-                    foreach(TrackerTier tier in manager.TrackerManager) {
-                        foreach(Tracker t in tier.Trackers) {
-                            t.AnnounceComplete += delegate (object sender, AnnounceResponseEventArgs e) {
-                                listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
-                            };
+                        // Every time the tracker's state changes, this is fired
+                        foreach(TrackerTier tier in manager.TrackerManager) {
+                            foreach(Tracker t in tier.Trackers) {
+                                t.AnnounceComplete += delegate (object sender, AnnounceResponseEventArgs e) {
+                                    listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
+                                };
+                            }
                         }
+
+                        Engine.Register(manager);
+
+                        // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
+                        manager.Start();
                     }
-
-                    Engine.Register(manager);
-
-                    // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                    manager.Start();
                 }
 
                 // While the torrents are still running, print out some stats to the screen.
