@@ -72,6 +72,7 @@
         <DataGrid x:Name="torrentsDataGrid"
                   Grid.Row="1"
                   Grid.ColumnSpan="2"
+                  ColumnWidth="*"
                   IsReadOnly="True"
                   AutoGenerateColumns="False"
                   MouseDoubleClick="torrentsDataGrid_MouseDoubleClick"
@@ -90,11 +91,11 @@
                 <DataGridTextColumn Header="Status"
                                     Binding="{Binding State}" />
                 <DataGridTextColumn Header="% Completed"
-                                    Binding="{Binding Progress}" />
+                                    Binding="{Binding Progress, Converter={StaticResource doubleFormatConverter}}" />
                 <DataGridTextColumn Header="Download Speed (kb/s)"
-                                    Binding="{Binding DownloadSpeed}" />
+                                    Binding="{Binding DownloadSpeed, Converter={StaticResource doubleFormatConverter}}" />
                 <DataGridTextColumn Header="Upload Speed (kb/s)"
-                                    Binding="{Binding UploadSpeed}" />
+                                    Binding="{Binding UploadSpeed, Converter={StaticResource doubleFormatConverter}}" />
             </DataGrid.Columns>
         </DataGrid>
 
@@ -107,6 +108,7 @@
 
             <TabItem Header="Peers">
                 <DataGrid x:Name="peerDataGrid"
+                          ColumnWidth="*"
                           AutoGenerateColumns="False"
                           SelectionChanged="torrentsDataGrid_SelectionChanged">
                     <DataGrid.Columns>
@@ -115,9 +117,9 @@
                         <DataGridTextColumn Header="Pieces Count"
                                             Binding="{Binding PiecesCount}" />
                         <DataGridTextColumn Header="Download Speed (kb/s)"
-                                            Binding="{Binding DownloadSpeed}" />
+                                            Binding="{Binding DownloadSpeed, Converter={StaticResource doubleFormatConverter}}" />
                         <DataGridTextColumn Header="Upload Speed (kb/s)"
-                                            Binding="{Binding UploadSpeed}" />
+                                            Binding="{Binding UploadSpeed, Converter={StaticResource doubleFormatConverter}}" />
                     </DataGrid.Columns>
                 </DataGrid>
             </TabItem>

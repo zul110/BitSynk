@@ -189,7 +189,7 @@ namespace DatabaseManager {
                 updateCommand.Parameters.AddWithValue("@deviceName", deviceName);
                 updateCommand.Parameters.AddWithValue("@deviceAddress", deviceAddress);
                 updateCommand.Parameters.AddWithValue("@userId", userId);
-                updateCommand.Parameters.AddWithValue("@deviceStatus", deviceStatus);
+                updateCommand.Parameters.AddWithValue("@deviceStatus", deviceStatus.ToString());
 
                 int result = await updateCommand.ExecuteNonQueryAsync();
 

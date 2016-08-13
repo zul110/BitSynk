@@ -1,6 +1,7 @@
 ﻿using BitSynk.Helpers;
 using BitSynk.Models;
 using BitSynk.ViewModels;
+using DatabaseManager;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -65,8 +66,10 @@ namespace BitSynk.Pages {
         //    }
         //}
 
-        private void Page_Loaded(object sender, RoutedEventArgs e) {
+        private async void Page_Loaded(object sender, RoutedEventArgs e) {
             ClearBackEntries();
+
+           await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Online);
 
             client = new Client(parameter);
             client.OnTorrentsAdded += Client_OnTorrentsAdded;
@@ -75,7 +78,7 @@ namespace BitSynk.Pages {
             BackgroundWorker bw = new BackgroundWorker();
 
             bw.DoWork += (s, ev) => {
-                client.StartEngineUsingTorrents();
+                client.StartEngine();//.StartEngineUsingTorrents();
             };
             
             bw.RunWorkerCompleted += (s, ev) => {
@@ -122,32 +125,35 @@ namespace BitSynk.Pages {
         }
 
         private void browseButton_Click(object sender, RoutedEventArgs e) {
-            Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog();
-            dlg.ValidateNames = false;
-            dlg.CheckFileExists = false;
-            dlg.CheckPathExists = false;
-            //dlg.FileName = "Document"; // Default file name
-            //dlg.DefaultExt = ".text"; // Default file extension
-            //dlg.Filter = "Torrent files (.torrent)|*.torrent"; // Filter files by extension
+            Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
+            dialog.ValidateNames = false;
+            dialog.CheckFileExists = false;
+            dialog.CheckPathExists = false;
+
+            dialog.FileName = "folder";
             
-            dlg.FileName = "folder";
-
-            // Show save file dialog box
-            Nullable<bool> result = dlg.ShowDialog();
-
-            // Process save file dialog box results
+            Nullable<bool> result = dialog.ShowDialog();
+            
             if(result == true) {
-                // Save document
-                string filename = dlg.FileName;
+                string filename = dialog.FileName;
+
                 if(Path.GetFileName(filename) == "folder") {
                     fileBox.Text = Path.GetDirectoryName(filename);
                 } else {
                     fileBox.Text = filename;
                 }
+
+                if(Settings.AUTO_ADD) {
+                    AddFileOrDirectory();
+                }
             }
         }
 
         private void addButton_Click(object sender, RoutedEventArgs e) {
+            AddFileOrDirectory();
+        }
+
+        private void AddFileOrDirectory() {
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
                 client.AddNewTorrent(fileBox.Text);
             }));

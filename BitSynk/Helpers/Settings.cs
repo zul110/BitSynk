@@ -21,6 +21,8 @@ namespace BitSynk.Helpers {
         public static string DOWNLOADS_DIRECTORY_NAME;
         public static string DOWNLOADS_DIRECTORY;
 
+        public static bool AUTO_ADD = true;
+
         public static bool FIRST_RUN
         {
             get {

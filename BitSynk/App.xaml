@@ -11,6 +11,7 @@
             </ResourceDictionary.MergedDictionaries>
             
             <converters:IntToBoolConverter x:Key="intToBoolConverter" />
+            <converters:DoubleFormatConverter x:Key="doubleFormatConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

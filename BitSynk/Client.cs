@@ -114,6 +114,10 @@ namespace BitSynk {
             InitEngine();
         }
 
+        public void StartEngine() {
+            timer.Start();
+        }
+
         private void Timer_Tick(object sender, EventArgs e) {
             Refresh();
         }
@@ -305,113 +309,6 @@ namespace BitSynk {
                     manager.Start();
                 }
             }
-
-            // While the torrents are still running, print out some stats to the screen.
-            // Details for all the loaded torrent managers are shown.
-            int i = 0;
-            bool running = true;
-            StringBuilder sb = new StringBuilder(1024);
-            while(running) {
-                if((i++) % 10 == 0) {
-                    sb.Remove(0, sb.Length);
-                    running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
-
-                    AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
-                    AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
-                    AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
-                    AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
-                    AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
-                    AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
-                    AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
-
-                    foreach(TorrentManager manager in Torrents) {
-                        BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
-                        if(bitSynkTorrent == null) {
-                            if(Application.Current != null) {
-                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                    BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
-                                        Name = manager.Torrent.Name,
-                                        Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
-                                        Progress = manager.Progress,
-                                        State = manager.State.ToString(),
-                                        DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
-                                        UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
-                                    });
-                                }));
-                            }
-                        } else {
-                            if(Application.Current != null) {
-                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                    bitSynkTorrent.Progress = manager.Progress;
-                                    bitSynkTorrent.State = manager.State.ToString();
-                                    bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                    bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                }));
-                            }
-                        }
-
-                        PeerChanged();
-
-                        AppendSeperator(sb);
-                        AppendFormat(sb, "State:           {0}", manager.State);
-                        AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
-                        AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-                        AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
-                        AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
-                        AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
-                        AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-                        //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-                        AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-                        AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-                        if(manager.PieceManager != null)
-                            AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
-
-                        foreach(PeerId p in manager.GetPeers()) {
-                            BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
-                            if(bitSynkPeer == null) {
-                                if(Application.Current != null) {
-                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                        bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
-                                            ConnectionUri = p.Peer.ConnectionUri,
-                                            DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
-                                            UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
-                                            PiecesCount = p.AmRequestingPiecesCount
-                                        });
-                                    }));
-                                }
-                            } else {
-                                if(Application.Current != null) {
-                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                        bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
-                                        bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
-                                        bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
-                                    }));
-                                }
-                            }
-
-                            AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
-                                                                                      p.Monitor.DownloadSpeed / 1024.0,
-                                                                                      p.AmRequestingPiecesCount,
-                                                                                      p.Monitor.UploadSpeed / 1024.0);
-                        }
-
-                        AppendFormat(sb, "", null);
-                        if(manager.Torrent != null)
-                            foreach(TorrentFile file in manager.Torrent.Files)
-                                AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
-                    }
-                    //Console.Clear();
-                    Console.WriteLine(sb.ToString());
-                    listener.ExportTo(Console.Out);
-                }
-
-                if(!timer.IsEnabled) {
-                    timer.Start();
-                }
-
-                System.Threading.Thread.Sleep(500);
-            }
         }
 
         public void AddNewTorrent(string filePath) {
@@ -496,111 +393,7 @@ namespace BitSynk {
                         manager.Start();
                     }
 
-                    // While the torrents are still running, print out some stats to the screen.
-                    // Details for all the loaded torrent managers are shown.
-                    int i = 0;
-                    bool running = true;
-                    StringBuilder sb = new StringBuilder(1024);
-                    while(running) {
-                        if((i++) % 10 == 0) {
-                            sb.Remove(0, sb.Length);
-                            running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
-
-                            AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
-                            AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
-                            AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
-                            AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
-                            AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
-                            AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
-                            AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
-
-                            foreach(TorrentManager manager in Torrents) {
-                                BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
-                                if(bitSynkTorrent == null) {
-                                    if(Application.Current != null) {
-                                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                            BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
-                                                Name = manager.Torrent.Name,
-                                                Progress = manager.Progress,
-                                                State = manager.State.ToString(),
-                                                DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
-                                                UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
-                                            });
-                                        }));
-                                    }
-                                } else {
-                                    if(Application.Current != null) {
-                                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                            bitSynkTorrent.Progress = manager.Progress;
-                                            bitSynkTorrent.State = manager.State.ToString();
-                                            bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                            bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                        }));
-                                    }
-                                }
-
-                                PeerChanged();
-
-                                AppendSeperator(sb);
-                                AppendFormat(sb, "State:           {0}", manager.State);
-                                AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
-                                AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-                                AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
-                                AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
-                                AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
-                                AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                                MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-                                //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-                                AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-                                AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-                                if(manager.PieceManager != null)
-                                    AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
-
-                                foreach(PeerId p in manager.GetPeers()) {
-                                    BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
-                                    if(bitSynkPeer == null) {
-                                        if(Application.Current != null) {
-                                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                                bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
-                                                    ConnectionUri = p.Peer.ConnectionUri,
-                                                    DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
-                                                    UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
-                                                    PiecesCount = p.AmRequestingPiecesCount
-                                                });
-                                            }));
-                                        }
-                                    } else {
-                                        if(Application.Current != null) {
-                                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                                bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
-                                                bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
-                                                bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
-                                            }));
-                                        }
-                                    }
-
-                                    AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
-                                                                                              p.Monitor.DownloadSpeed / 1024.0,
-                                                                                              p.AmRequestingPiecesCount,
-                                                                                              p.Monitor.UploadSpeed / 1024.0);
-                                }
-
-                                AppendFormat(sb, "", null);
-                                if(manager.Torrent != null)
-                                    foreach(TorrentFile file in manager.Torrent.Files)
-                                        AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
-                            }
-                            //Console.Clear();
-                            Console.WriteLine(sb.ToString());
-                            listener.ExportTo(Console.Out);
-                        }
-
-                        if(!timer.IsEnabled) {
-                            timer.Start();
-                        }
-
-                        System.Threading.Thread.Sleep(500);
-                    }
+                    UpdateStats();
                 } else {
                     MessageBox.Show("Task already exists!");
                 }
@@ -739,122 +532,19 @@ namespace BitSynk {
                         // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                         manager.Start();
                     } else {
-                        if(manager.State == TorrentState.Stopped) {
-                            if(!Engine.Torrents.Contains(manager)) {
-                                Engine.Register(manager);
-                            }
+                        if(!Engine.Disposed) {
+                            if(manager.State == TorrentState.Stopped) {
+                                if(!Engine.Torrents.Contains(manager)) {
+                                    Engine.Register(manager);
+                                }
 
-                            manager.Start();
+                                manager.Start();
+                            }
                         }
                     }
                 }
 
-                // While the torrents are still running, print out some stats to the screen.
-                // Details for all the loaded torrent managers are shown.
-                int i = 0;
-                bool running = true;
-                StringBuilder sb = new StringBuilder(1024);
-                while(running) {
-                    if((i++) % 10 == 0) {
-                        sb.Remove(0, sb.Length);
-                        running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
-
-                        AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
-                        AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
-                        AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
-                        AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
-                        AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
-                        AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
-                        AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
-
-                        foreach(TorrentManager manager in Torrents) {
-                            BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
-                            if(bitSynkTorrent == null) {
-                                if(Application.Current != null) {
-                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                        BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
-                                            Name = manager.Torrent.Name,
-                                            Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
-                                            Progress = manager.Progress,
-                                            State = manager.State.ToString(),
-                                            DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
-                                            UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
-                                        });
-                                    }));
-                                }
-                            } else {
-                                if(Application.Current != null) {
-                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                        bitSynkTorrent.Progress = manager.Progress;
-                                        bitSynkTorrent.State = manager.State.ToString();
-                                        bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                        bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                    }));
-                                }
-                            }
-
-                            PeerChanged();
-
-                            AppendSeperator(sb);
-                            AppendFormat(sb, "State:           {0}", manager.State);
-                            AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
-                            AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-                            AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
-                            AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
-                            AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
-                            AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                            MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-                            //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-                            AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-                            AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-                            if(manager.PieceManager != null)
-                                AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
-
-                            foreach(PeerId p in manager.GetPeers()) {
-                                BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
-                                if(bitSynkPeer == null) {
-                                    if(Application.Current != null) {
-                                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                            bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
-                                                ConnectionUri = p.Peer.ConnectionUri,
-                                                DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
-                                                UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
-                                                PiecesCount = p.AmRequestingPiecesCount
-                                            });
-                                        }));
-                                    }
-                                } else {
-                                    if(Application.Current != null) {
-                                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                            bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
-                                            bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
-                                            bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
-                                        }));
-                                    }
-                                }
-
-                                AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
-                                                                                          p.Monitor.DownloadSpeed / 1024.0,
-                                                                                          p.AmRequestingPiecesCount,
-                                                                                          p.Monitor.UploadSpeed / 1024.0);
-                            }
-
-                            AppendFormat(sb, "", null);
-                            if(manager.Torrent != null)
-                                foreach(TorrentFile file in manager.Torrent.Files)
-                                    AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
-                        }
-                        //Console.Clear();
-                        Console.WriteLine(sb.ToString());
-                        listener.ExportTo(Console.Out);
-                    }
-
-                    if(!timer.IsEnabled) {
-                        timer.Start();
-                    }
-
-                    System.Threading.Thread.Sleep(500);
-                }
+                UpdateStats();
             };
 
             bw.RunWorkerCompleted += (s, ev) => {
@@ -864,6 +554,115 @@ namespace BitSynk {
             };
 
             bw.RunWorkerAsync();
+        }
+
+        private void UpdateStats() {
+            // While the torrents are still running, print out some stats to the screen.
+            // Details for all the loaded torrent managers are shown.
+            int i = 0;
+            bool running = true;
+            StringBuilder sb = new StringBuilder(1024);
+            while(running) {
+                if((i++) % 10 == 0) {
+                    sb.Remove(0, sb.Length);
+                    running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
+
+                    AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
+                    AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
+                    AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
+                    AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
+                    AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
+                    AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
+                    AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
+
+                    foreach(TorrentManager manager in Torrents) {
+                        BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
+                        if(bitSynkTorrent == null) {
+                            if(Application.Current != null) {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                    BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
+                                        Name = manager.Torrent.Name,
+                                        Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
+                                        Progress = manager.Progress,
+                                        State = manager.State.ToString(),
+                                        DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
+                                        UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
+                                    });
+                                }));
+                            }
+                        } else {
+                            if(Application.Current != null) {
+                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                    bitSynkTorrent.Progress = manager.Progress;
+                                    bitSynkTorrent.State = manager.State.ToString();
+                                    bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+                                    bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+                                }));
+                            }
+                        }
+
+                        PeerChanged();
+
+                        AppendSeperator(sb);
+                        AppendFormat(sb, "State:           {0}", manager.State);
+                        AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
+                        AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
+                        AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
+                        AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
+                        AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
+                        AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
+                        MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
+                        //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
+                        AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
+                        AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
+                        if(manager.PieceManager != null)
+                            AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
+
+                        foreach(PeerId p in manager.GetPeers()) {
+                            BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
+                            if(bitSynkPeer == null) {
+                                if(Application.Current != null) {
+                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                        bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
+                                            ConnectionUri = p.Peer.ConnectionUri,
+                                            DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
+                                            UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
+                                            PiecesCount = p.AmRequestingPiecesCount
+                                        });
+                                    }));
+                                }
+                            } else {
+                                if(Application.Current != null) {
+                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                        bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
+                                        bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
+                                        bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
+                                    }));
+                                }
+                            }
+
+                            AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
+                                                                                      p.Monitor.DownloadSpeed / 1024.0,
+                                                                                      p.AmRequestingPiecesCount,
+                                                                                      p.Monitor.UploadSpeed / 1024.0);
+                        }
+
+                        AppendFormat(sb, "", null);
+                        if(manager.Torrent != null)
+                            foreach(TorrentFile file in manager.Torrent.Files)
+                                AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
+                    }
+                    //Console.Clear();
+                    Console.WriteLine(sb.ToString());
+                    listener.ExportTo(Console.Out);
+                }
+
+                if(!timer.IsEnabled) {
+                    timer.Start();
+                }
+
+                System.Threading.Thread.Sleep(500);
+            }
         }
 
         static void manager_PeersFound(object sender, PeersAddedEventArgs e) {
@@ -885,7 +684,9 @@ namespace BitSynk {
             sb.AppendLine();
         }
 
-        private static void shutdown() {
+        private static async void shutdown() {
+            await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Offline);
+
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for(int i = 0; i < torrents.Count; i++) {
                 torrents[i].Stop();
@@ -926,3 +727,111 @@ namespace BitSynk {
         }
     }
 }
+
+
+//    // While the torrents are still running, print out some stats to the screen.
+//    // Details for all the loaded torrent managers are shown.
+//    int i = 0;
+//    bool running = true;
+//    StringBuilder sb = new StringBuilder(1024);
+//        while(running) {
+//            if((i++) % 10 == 0) {
+//                sb.Remove(0, sb.Length);
+//                running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
+
+//                AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
+//                AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
+//                AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
+//                AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
+//                AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
+//                AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
+//                AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
+
+//                foreach(TorrentManager manager in Torrents) {
+//                    BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
+//                    if(bitSynkTorrent == null) {
+//                        if(Application.Current != null) {
+//                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+//                                BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
+//                                    Name = manager.Torrent.Name,
+//                                    Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
+//                                    Progress = manager.Progress,
+//                                    State = manager.State.ToString(),
+//                                    DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
+//                                    UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
+//                                });
+//                            }));
+//                        }
+//                    } else {
+//                        if(Application.Current != null) {
+//                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+//                                bitSynkTorrent.Progress = manager.Progress;
+//                                bitSynkTorrent.State = manager.State.ToString();
+//                                bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+//                                bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+//                            }));
+//                        }
+//                    }
+
+//                    PeerChanged();
+
+//                    AppendSeperator(sb);
+//                    AppendFormat(sb, "State:           {0}", manager.State);
+//                    AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
+//                    AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
+//                    AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
+//                    AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
+//                    AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
+//                    AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
+//                    MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
+//                    //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
+//                    AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
+//                    AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
+//                    if(manager.PieceManager != null)
+//                        AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
+
+//                    foreach(PeerId p in manager.GetPeers()) {
+//                        BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
+//                        if(bitSynkPeer == null) {
+//                            if(Application.Current != null) {
+//                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+//                                    bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
+//ConnectionUri = p.Peer.ConnectionUri,
+//                                        DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
+//                                        UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
+//                                        PiecesCount = p.AmRequestingPiecesCount
+//                                    });
+//                                }));
+//                            }
+//                        } else {
+//                            if(Application.Current != null) {
+//                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+//                                    bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
+//                                    bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
+//                                    bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
+//                                }));
+//                            }
+//                        }
+
+//                        AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
+//                                                                                  p.Monitor.DownloadSpeed / 1024.0,
+//                                                                                  p.AmRequestingPiecesCount,
+//                                                                                  p.Monitor.UploadSpeed / 1024.0);
+//                    }
+
+//                    AppendFormat(sb, "", null);
+//                    if(manager.Torrent != null)
+//                        foreach(TorrentFile file in manager.Torrent.Files)
+//                            AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
+//                }
+//                //Console.Clear();
+//                Console.WriteLine(sb.ToString());
+//                listener.ExportTo(Console.Out);
+//            }
+
+//            if(!timer.IsEnabled) {
+//                timer.Start();
+//            }
+
+//            System.Threading.Thread.Sleep(500);
+//        }
