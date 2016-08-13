@@ -424,8 +424,8 @@ namespace BitSynk {
 
                     if(filesToDelete.Count > 0) {
                         foreach(string fileToDelete in filesToDelete) {
-                            Torrents.Remove(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == fileToDelete).FirstOrDefault());
-                            Engine.Torrents.Remove(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == fileToDelete).FirstOrDefault());
+                            Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == fileToDelete).FirstOrDefault());
+                            //Engine.Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == fileToDelete).FirstOrDefault());
                         }
                     }
 

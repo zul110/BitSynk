@@ -409,9 +409,9 @@ namespace DatabaseManager
                     MySqlCommand deleteCommand = new MySqlCommand("DELETE FROM FILES WHERE FILE_HASH = @fileHash", connection);
                     deleteCommand.Parameters.AddWithValue("@fileHash", fileHash);
 
-                    if((await GetFilesToRemoveAsync(userId)).Count < 1) {
+                    //if((await GetFilesToRemoveAsync(userId)).Count < 1) {
                         await AddFileToRemoveQueueAsync(await GetFileByHashAsync(fileHash));
-                    }
+                    //}
 
                     int result = await deleteCommand.ExecuteNonQueryAsync();
 
