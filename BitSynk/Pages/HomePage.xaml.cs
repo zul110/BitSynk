@@ -38,7 +38,7 @@ namespace BitSynk.Pages {
         }
 
         private object parameter = null;
-        private DispatcherTimer timer;
+        //private DispatcherTimer timer;
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
@@ -52,18 +52,18 @@ namespace BitSynk.Pages {
 
             this.parameter = parameter;
 
-            timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(5);
-            timer.Tick += Timer_Tick;
+            //timer = new DispatcherTimer();
+            //timer.Interval = TimeSpan.FromSeconds(5);
+            //timer.Tick += Timer_Tick;
 
             this.DataContext = this;
         }
 
-        private void Timer_Tick(object sender, EventArgs e) {
-            if(client != null) {
-                client.Refresh();
-            }
-        }
+        //private void Timer_Tick(object sender, EventArgs e) {
+        //    if(client != null) {
+        //        client.Refresh();
+        //    }
+        //}
 
         private void Page_Loaded(object sender, RoutedEventArgs e) {
             ClearBackEntries();
@@ -76,7 +76,6 @@ namespace BitSynk.Pages {
 
             bw.DoWork += (s, ev) => {
                 client.StartEngineUsingTorrents();
-                timer.Start();
             };
             
             bw.RunWorkerCompleted += (s, ev) => {

@@ -69,6 +69,8 @@ namespace BitSynk {
 
         private object parameter;
 
+        private DispatcherTimer timer;
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
             if(PropertyChanged != null) {
@@ -78,6 +80,10 @@ namespace BitSynk {
 
         public Client(object parameter) {
             this.parameter = parameter;
+
+            timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(5);
+            timer.Tick += Timer_Tick;
 
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
             basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
@@ -106,6 +112,10 @@ namespace BitSynk {
             InitTrackers();
 
             InitEngine();
+        }
+
+        private void Timer_Tick(object sender, EventArgs e) {
+            Refresh();
         }
 
         private void InitTrackers() {
@@ -407,6 +417,10 @@ namespace BitSynk {
                     listener.ExportTo(Console.Out);
                 }
 
+                if(!timer.IsEnabled) {
+                    timer.Start();
+                }
+
                 System.Threading.Thread.Sleep(500);
             }
         }
@@ -415,6 +429,8 @@ namespace BitSynk {
             BackgroundWorker bw = new BackgroundWorker();
 
             bw.DoWork += async (s, ev) => {
+                timer.Stop();
+
                 if(!File.Exists(Settings.FILES_DIRECTORY + "//" + Path.GetFileName(filePath))) {
                     string fileCopy = await Utils.CopyFile(filePath);
 
@@ -590,6 +606,10 @@ namespace BitSynk {
                             listener.ExportTo(Console.Out);
                         }
 
+                        if(!timer.IsEnabled) {
+                            timer.Start();
+                        }
+
                         System.Threading.Thread.Sleep(500);
                     }
                 } else {
@@ -610,6 +630,8 @@ namespace BitSynk {
             BackgroundWorker bw = new BackgroundWorker();
 
             bw.DoWork += async (s, ev) => {
+                timer.Stop();
+
                 Torrent torrent = null;
 
                 FileManager fileManager = new FileManager();
@@ -826,6 +848,10 @@ namespace BitSynk {
                         //Console.Clear();
                         Console.WriteLine(sb.ToString());
                         listener.ExportTo(Console.Out);
+                    }
+
+                    if(!timer.IsEnabled) {
+                        timer.Start();
                     }
 
                     System.Threading.Thread.Sleep(500);
