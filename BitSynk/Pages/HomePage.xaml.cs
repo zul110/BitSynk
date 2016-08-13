@@ -158,6 +158,7 @@ namespace BitSynk.Pages {
             new FileTrackerViewModel().RemoveFile(bitSynkTorrentModel);
 
             client.BitSynkTorrents.Remove(client.BitSynkTorrents.Where(t => t.Hash == bitSynkTorrentModel.Hash).FirstOrDefault());
+            client.Torrents.Remove(client.Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == bitSynkTorrentModel.Hash).FirstOrDefault());
         }
     }
 }

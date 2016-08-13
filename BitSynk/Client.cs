@@ -369,20 +369,24 @@ namespace BitSynk {
                         foreach(PeerId p in manager.GetPeers()) {
                             BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
                             if(bitSynkPeer == null) {
-                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                    bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
-                                        ConnectionUri = p.Peer.ConnectionUri,
-                                        DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
-                                        UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
-                                        PiecesCount = p.AmRequestingPiecesCount
-                                    });
-                                }));
+                                if(Application.Current != null) {
+                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                        bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
+                                            ConnectionUri = p.Peer.ConnectionUri,
+                                            DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
+                                            UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
+                                            PiecesCount = p.AmRequestingPiecesCount
+                                        });
+                                    }));
+                                }
                             } else {
-                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                    bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
-                                    bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
-                                    bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
-                                }));
+                                if(Application.Current != null) {
+                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                        bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
+                                        bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
+                                        bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
+                                    }));
+                                }
                             }
 
                             AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,

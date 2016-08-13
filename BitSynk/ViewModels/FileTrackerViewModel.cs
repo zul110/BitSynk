@@ -109,7 +109,7 @@ namespace BitSynk.ViewModels {
         //}
 
         public async void DeleteFileFromDatabase(BitSynkTorrentModel bitSynkTorrentModel) {
-            await new FileManager().RemoveFileByHashAsync(bitSynkTorrentModel.Hash);
+            await new FileManager().RemoveFileByHashAsync(bitSynkTorrentModel.Hash, Settings.USER_ID);
         }
 
         public void DeleteTorrent(string fileName) {

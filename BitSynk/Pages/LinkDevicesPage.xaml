@@ -15,9 +15,17 @@
                     MaxWidth="250"
                     Margin="24">
 
+            <TextBlock Text="Use this code on other devices to link to this device:"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"/>
+            <TextBlock x:Name="codeBlock"
+                       FontSize="24"
+                       HorizontalAlignment="Center" />
+
             <TextBlock Text="Please enter the 5 digit code below to link this device with your main device."
                        TextWrapping="Wrap"
-                       TextAlignment="Center" />
+                       TextAlignment="Center"
+                       Margin="0,48,0,0"/>
 
             <TextBlock Text="Code"
                        Margin="0,24,0,0"

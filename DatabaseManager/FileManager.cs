@@ -401,7 +401,7 @@ namespace DatabaseManager
             return false;
         }
 
-        public async Task<bool> RemoveFileByHashAsync(string fileHash) {
+        public async Task<bool> RemoveFileByHashAsync(string fileHash, string userId) {
             if(await FileHashExistsAsync(fileHash)) {
                 using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                     connection.Open();
@@ -409,7 +409,9 @@ namespace DatabaseManager
                     MySqlCommand deleteCommand = new MySqlCommand("DELETE FROM FILES WHERE FILE_HASH = @fileHash", connection);
                     deleteCommand.Parameters.AddWithValue("@fileHash", fileHash);
 
-                    await AddFileToRemoveQueueAsync(await GetFileByHashAsync(fileHash));
+                    if((await GetFilesToRemoveAsync(userId)).Count < 1) {
+                        await AddFileToRemoveQueueAsync(await GetFileByHashAsync(fileHash));
+                    }
 
                     int result = await deleteCommand.ExecuteNonQueryAsync();
 

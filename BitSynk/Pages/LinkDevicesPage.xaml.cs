@@ -22,6 +22,8 @@ namespace BitSynk.Pages {
     public partial class LinkDevicesPage : BasePage {
         public LinkDevicesPage() {
             InitializeComponent();
+
+            codeBlock.Text = Settings.USER_ID.Substring(0, 5);
         }
 
         private void linkButton_Click(object sender, RoutedEventArgs e) {
