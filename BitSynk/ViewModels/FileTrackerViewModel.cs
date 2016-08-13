@@ -124,11 +124,16 @@ namespace BitSynk.ViewModels {
             return await new FileManager().GetFilesToRemoveAsync(userId);
         }
 
-        public async Task DeleteFilesInQueue() {
+        public async Task<List<string>> DeleteFilesInQueue() {
+            List<string> filesToDelete = new List<string>();
             foreach(DatabaseManager.Models.File file in await GetFilesToRemove(Settings.USER_ID)) {
                 DeleteFileLocally(file.FileName);
                 DeleteTorrent(file.FileName);
+
+                filesToDelete.Add(file.FileHash);
             }
+
+            return filesToDelete;
         }
     }
 }
