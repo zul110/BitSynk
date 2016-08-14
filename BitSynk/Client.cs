@@ -428,7 +428,7 @@ namespace BitSynk {
                             //Engine.Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == fileToDelete).FirstOrDefault());
                         }
                     }
-
+                    Thread.Sleep(200);
                     await fileTrackerVM.CheckForNewFiles();
 
                     List<DatabaseManager.Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
