@@ -127,6 +127,8 @@ namespace BitSynk.ViewModels {
 
                     Settings.USER_ID = user.UserId;
                     Settings.USER_EMAIL = user.UserEmail;
+
+                    Settings.SetValue(Constants.USER_ID, user.UserId);
                 } else {
                     await new DeviceManager().AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), user.UserId, DeviceStatus.Online);
                 }

@@ -392,10 +392,10 @@ namespace MonoTorrent.Client
         public void StartAll()
         {
             CheckDisposed();
-            //MainLoop.QueueWait((MainLoopTask)delegate {
+            MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < torrents.Count; i++)
                     torrents[i].Start();
-            //});
+            });
         }
 
         public void StopAll()

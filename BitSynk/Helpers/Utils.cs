@@ -62,7 +62,7 @@ namespace BitSynk.Helpers {
             //tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
             //tier.Add("http://" + Utils.GetPublicIPAddress() + ":10000/announce/");//Utils.GetLocalIPAddress() + ":10000");// "http://localhost/announce");
 
-            c.Announces.Add(tier);
+            //c.Announces.Add(tier);
             c.Comment = "BitSynk";
             c.CreatedBy = "Zul";
             c.Publisher = "zul";

@@ -29,6 +29,9 @@
 
 using System;
 using MonoTorrent.BEncoding;
+using System.Collections;
+using System.Collections.Generic;
+using System.Net;
 
 namespace MonoTorrent
 {
@@ -42,6 +45,7 @@ namespace MonoTorrent
         void GetPeers(InfoHash infohash);
         void Start();
         void Start(byte[] initialNodes);
+        void Start(List<IPEndPoint> initialNodes);
         DhtState State { get; }
         event EventHandler StateChanged;
         void Stop();

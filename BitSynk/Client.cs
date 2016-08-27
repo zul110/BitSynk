@@ -27,7 +27,7 @@ using System.Windows.Threading;
 
 namespace BitSynk {
     public class Client : INotifyPropertyChanged {
-        private int port = 10000;
+        private int port = 52111;
 
         private static string dhtNodeFile;
         private static string basePath;
@@ -171,18 +171,53 @@ namespace BitSynk {
 
         private void InitDHT() {
             byte[] nodes = null;
+            IEnumerable<Node> cnodes = null;
 
-            try {
-                nodes = File.ReadAllBytes(dhtNodeFile);
-            } catch {
-                Console.WriteLine("No existing dht nodes could be loaded");
-            }
+            List<IPEndPoint> initialNodes = new List<IPEndPoint>();
 
             DhtListener dhtListner = new DhtListener(new IPEndPoint(IPAddress.Any, port));
             DhtEngine dht = new DhtEngine(dhtListner);
             Engine.RegisterDht(dht);
             dhtListner.Start();
-            Engine.DhtEngine.Start(nodes);
+
+            try {
+                BEncodedList details = new BEncodedList();
+                Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("2.49.83.10"), port));
+
+                initialNodes.Add(new IPEndPoint(IPAddress.Parse("2.49.83.10"), port));
+
+                string s = "";
+                var cnode = node.CompactNode();
+                details.Add(cnode);
+                cnodes = Node.FromCompactNode(cnode);
+                
+                //foreach(var detail in details) {
+                //    detail.
+                //}
+
+                //foreach(var n in Node.FromCompactNode(cnode)) {
+                //    s += n.EndPoint.Address + "\n";
+                //}
+
+                //var dencode = details.Encode();
+                
+                //File.WriteAllBytes("DhtNodes", dencode);// SaveNodes());
+
+                //nodes = dencode;// File.ReadAllBytes(dhtNodeFile);
+                
+                //var bnodes = Node.FromCompactNode(details); //Node.FromCompactNode(nodes);
+                //s = "";
+                //s += bnodes; //Node.FromCompactNode(nodes, 0).EndPoint.Address + "\n";
+                //foreach(var n in bnodes) {
+                //    s += n.EndPoint.Address + "\n";
+                //}
+
+                //File.WriteAllText("nodesString", s);
+            } catch {
+                Console.WriteLine("No existing dht nodes could be loaded");
+            }
+
+            Engine.DhtEngine.Start(initialNodes);
         }
 
         public async void StartEngineUsingTorrents() {
@@ -393,6 +428,9 @@ namespace BitSynk {
                         manager.Start();
                     }
 
+                    Engine.StartAll();
+                    Engine.DhtEngine.Start();
+
                     UpdateStats();
                 } else {
                     MessageBox.Show("Task already exists!");
@@ -552,6 +590,9 @@ namespace BitSynk {
                         }
                     }
 
+                    Engine.StartAll();
+                    Engine.DhtEngine.Start();
+
                     UpdateStats();
                 } catch(Exception ex) {
                     timer.Start();
@@ -573,8 +614,8 @@ namespace BitSynk {
             int i = 0;
             bool running = true;
             StringBuilder sb = new StringBuilder(1024);
-            while(running) {
-                if((i++) % 10 == 0) {
+            //while(running) {
+                //if((i++) % 10 == 0) {
                     sb.Remove(0, sb.Length);
                     running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
 
@@ -599,6 +640,8 @@ namespace BitSynk {
                                         DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
                                         UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
                                     });
+
+                                    bitSynkTorrent = BitSynkTorrents.Last();
                                 }));
                             }
                         } else {
@@ -666,14 +709,14 @@ namespace BitSynk {
                     //Console.Clear();
                     Console.WriteLine(sb.ToString());
                     listener.ExportTo(Console.Out);
-                }
+                //}
 
                 if(!timer.IsEnabled) {
                     timer.Start();
                 }
 
-                System.Threading.Thread.Sleep(500);
-            }
+                //System.Threading.Thread.Sleep(500);
+            //}
         }
 
         static void manager_PeersFound(object sender, PeersAddedEventArgs e) {
@@ -710,7 +753,18 @@ namespace BitSynk {
                 fastResume.Add(torrents[i].Torrent.InfoHash.ToHex(), torrents[i].SaveFastResume().Encode());
             }
 
-            File.WriteAllBytes(dhtNodeFile, engine.DhtEngine.SaveNodes());
+            var bnodes = engine.DhtEngine.SaveNodes();
+            var nodes = Node.FromCompactNode(bnodes);
+
+            //File.WriteAllBytes(dhtNodeFile, bnodes);
+
+            
+            string s = "";
+            foreach(var node in nodes) {
+                s += node.EndPoint.Address + "\n";
+            }
+
+            //File.WriteAllText("nodesString", s);
 
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
             engine.Dispose();

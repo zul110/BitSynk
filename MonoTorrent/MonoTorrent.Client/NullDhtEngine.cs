@@ -29,6 +29,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text;
 using MonoTorrent.BEncoding;
 
@@ -86,6 +87,10 @@ namespace MonoTorrent.Client
 
         public void Stop()
         {
+            
+        }
+
+        public void Start(List<IPEndPoint> initialNodes) {
             
         }
     }

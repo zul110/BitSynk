@@ -142,6 +142,21 @@ namespace MonoTorrent.Dht
             if (listener == null)
                 throw new ArgumentNullException("listener");
 
+            //Bucket bucket = new Bucket();
+            //Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("2.49.83.10"), 10000));
+            //bucket.Add(node);
+
+            //var cnode = node.CompactNode();
+            //IEnumerable<Node> nodes = Node.FromCompactNode(cnode);
+
+            //foreach(Node n in nodes) {
+            //    Console.Write(n.EndPoint.Address.ToString());
+            //}
+
+            //RoutingTable.Buckets.Add(bucket);
+
+            //File.WriteAllBytes("DhtNodes", SaveNodes());
+
             messageLoop = new MessageLoop(this, listener);
             timeout = TimeSpan.FromSeconds(15); // 15 second message timeout by default
             tokenManager = new TokenManager();
@@ -246,17 +261,22 @@ namespace MonoTorrent.Dht
 
         public void Start()
         {
-            Start(null);
+            //Start(null);
         }
 
-        public void Start(byte[] initialNodes)
+        public void Start(List<IPEndPoint> initialNodes)//byte[] initialNodes)
         {
+            List<Node> nodes = new List<Node>();
             CheckDisposed();
 
             messageLoop.Start();
             if (Bootstrap)
             {
-                new InitialiseTask(this, initialNodes).Execute();
+                foreach(IPEndPoint endpoint in initialNodes) {
+                    nodes.Add(new Dht.Node(NodeId.Create(), endpoint));
+                }
+
+                new InitialiseTask(this, nodes).Execute();
                 RaiseStateChanged(DhtState.Initialising);
                 bootStrap = false;
             }
@@ -274,6 +294,36 @@ namespace MonoTorrent.Dht
                 {
                     if ((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout)
                     {
+                        b.LastChanged = DateTime.UtcNow;
+                        RefreshBucketTask task = new RefreshBucketTask(this, b);
+                        task.Execute();
+                    }
+                }
+                return !Disposed;
+            });
+        }
+
+        public void Start(byte[] initialNodes)
+        {
+            CheckDisposed();
+
+            messageLoop.Start();
+            if(Bootstrap) {
+
+
+                new InitialiseTask(this, initialNodes).Execute();
+                RaiseStateChanged(DhtState.Initialising);
+                bootStrap = false;
+            } else {
+                RaiseStateChanged(DhtState.Ready);
+            }
+
+            DhtEngine.MainLoop.QueueTimeout(TimeSpan.FromSeconds(1), delegate {
+                if(Disposed)
+                    return false;
+
+                foreach(Bucket b in RoutingTable.Buckets) {
+                    if((DateTime.UtcNow - b.LastChanged) > BucketRefreshTimeout) {
                         b.LastChanged = DateTime.UtcNow;
                         RefreshBucketTask task = new RefreshBucketTask(this, b);
                         task.Execute();

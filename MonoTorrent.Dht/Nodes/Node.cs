@@ -177,19 +177,25 @@ namespace MonoTorrent.Dht
 			foreach(BEncodedValue node in nodes)
 	        {
                 //bad format!
-                if (!(node is BEncodedList))
-                    continue;
+                //if (!(node is BEncodedList))
+                    //continue;
                 
 	            string host = string.Empty;
 	            long port = 0;
-	            foreach (BEncodedValue val in (BEncodedList)node)
-	            {
-	                if(val is BEncodedString)
-	                	host = ((BEncodedString)val).Text;
-	                else if (val is BEncodedNumber)
-	                    port = ((BEncodedNumber)val).Number;
-	            }
-	            IPAddress address;
+
+                if(node is BEncodedString)
+                    host = ((BEncodedString)node).Text;
+                else if(node is BEncodedNumber)
+                    port = ((BEncodedNumber)node).Number;
+
+                //foreach (BEncodedValue val in (BEncodedList)node)
+                //{
+                //if(val is BEncodedString)
+                //	host = ((BEncodedString)val).Text;
+                //else if (val is BEncodedNumber)
+                //    port = ((BEncodedNumber)val).Number;
+                //}
+                IPAddress address;
 	            IPAddress.TryParse(host, out address);
                 
                 //REM: bad design from bitcomet we do not have node id so create it...
