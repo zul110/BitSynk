@@ -132,5 +132,8 @@ namespace BitSynk.Helpers {
             return filePath;
         }
 
+        internal static string GetPublicIPAddress() {
+            return new WebClient().DownloadString(new Uri("http://www.canihazip.com/s", UriKind.RelativeOrAbsolute));
+        }
     }
 }

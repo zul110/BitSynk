@@ -184,7 +184,7 @@ namespace BitSynk {
                 BEncodedList details = new BEncodedList();
                 Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("2.49.83.10"), port));
 
-                initialNodes.Add(new IPEndPoint(IPAddress.Parse("2.49.83.10"), port));
+                initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetPublicIPAddress()), port));
 
                 string s = "";
                 var cnode = node.CompactNode();
