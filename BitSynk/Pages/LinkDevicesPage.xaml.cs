@@ -41,7 +41,7 @@ namespace BitSynk.Pages {
 
             if(userCode != Settings.USER_ID.Substring(0, 5)) {
                 if(await new AuthViewModel().LinkDevices(userCode)) {
-                    GoToPage(new HomePage("hashes"));
+                    GoToPage(new HomePage());
                 } else {
                     MessageBox.Show("Invalid code. Please make sure that you have the correct 5 digit code, and try agian.");
                 }
