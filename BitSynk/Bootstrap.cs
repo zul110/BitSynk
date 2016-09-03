@@ -49,9 +49,9 @@ namespace BitSynk {
             deviceManager = new DeviceManager();
 
             if(await deviceManager.GetDeviceAsync(Settings.DEVICE_ID) == null) {
-                await deviceManager.AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), Settings.USER_ID, DeviceStatus.Online);
+                await deviceManager.AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DeviceStatus.Online);
             } else {
-                await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), Settings.USER_ID, DeviceStatus.Online);
+                await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DeviceStatus.Online);
             }
         }
 

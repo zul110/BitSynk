@@ -739,7 +739,7 @@ namespace BitSynk {
         }
 
         private static async void shutdown() {
-            await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Offline);
+            await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Offline);
 
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for(int i = 0; i < torrents.Count; i++) {

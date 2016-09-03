@@ -69,7 +69,7 @@ namespace BitSynk.Pages {
         private async void Page_Loaded(object sender, RoutedEventArgs e) {
             ClearBackEntries();
 
-           await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetLocalIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Online);
+           await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Online);
 
             client = new Client(parameter);
             client.OnTorrentsAdded += Client_OnTorrentsAdded;
