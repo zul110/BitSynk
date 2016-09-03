@@ -99,7 +99,7 @@ namespace BitSynk.Pages {
         }
 
         private void Client_OnTorrentsAdded(object sender, EventArgs e) {
-            var torrents = (sender as Client).BitSynkTorrents;
+            var torrents = (sender as Client).bitSynkTorrents;
 
             if(Application.Current != null) {
                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
@@ -170,7 +170,7 @@ namespace BitSynk.Pages {
         private void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
             new FileTrackerViewModel().RemoveFile(bitSynkTorrentModel);
 
-            client.BitSynkTorrents.Remove(client.BitSynkTorrents.Where(t => t.Hash == bitSynkTorrentModel.Hash).FirstOrDefault());
+            client.bitSynkTorrents.Remove(client.bitSynkTorrents.Where(t => t.Hash == bitSynkTorrentModel.Hash).FirstOrDefault());
             client.Torrents.Remove(client.Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == bitSynkTorrentModel.Hash).FirstOrDefault());
         }
     }
