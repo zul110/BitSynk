@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,9 +39,6 @@ namespace BitSynk.Pages {
             }
         }
 
-        private object parameter = null;
-        //private DispatcherTimer timer;
-
         public event PropertyChangedEventHandler PropertyChanged;
         protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
             if(PropertyChanged != null) {
@@ -48,30 +46,26 @@ namespace BitSynk.Pages {
             }
         }
 
-        public HomePage(object parameter) {
+        public HomePage() {
             InitializeComponent();
-
-            this.parameter = parameter;
-
-            //timer = new DispatcherTimer();
-            //timer.Interval = TimeSpan.FromSeconds(5);
-            //timer.Tick += Timer_Tick;
 
             this.DataContext = this;
         }
-
-        //private void Timer_Tick(object sender, EventArgs e) {
-        //    if(client != null) {
-        //        client.Refresh();
-        //    }
-        //}
-
+        
         private async void Page_Loaded(object sender, RoutedEventArgs e) {
             ClearBackEntries();
 
-           await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Online);
+            List<IPEndPoint> initialNodes = new List<IPEndPoint>();
 
-            client = new Client(parameter);
+            DeviceManager deviceManager = new DeviceManager();
+
+            await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Online);
+
+            foreach(var device in await deviceManager.GetAllDevicesByUserAsync(Settings.USER_ID)) {
+                initialNodes.Add(new IPEndPoint(IPAddress.Parse(device.DeviceAddress), 52111));
+            }
+
+            client = new Client(initialNodes);
             client.OnTorrentsAdded += Client_OnTorrentsAdded;
             client.OnPeerChanged += Client_OnPeerChanged;
 

@@ -47,7 +47,7 @@ namespace BitSynk.Pages {
         }
 
         private void GoToHomePage() {
-            GoToPage(new HomePage("torrents"));//("/Pages/HomePage.xaml");
+            GoToPage(new HomePage());//("/Pages/HomePage.xaml");
         }
 
         private void GoToLinkDevicesPage() {

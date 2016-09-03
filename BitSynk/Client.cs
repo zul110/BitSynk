@@ -43,7 +43,8 @@ namespace BitSynk {
 
         private List<RawTrackerTier> trackers;
 
-        public ObservableCollection<BitSynkTorrentModel> BitSynkTorrents = new ObservableCollection<BitSynkTorrentModel>(); 
+        public ObservableCollection<BitSynkTorrentModel> bitSynkTorrents = new ObservableCollection<BitSynkTorrentModel>();
+        List<IPEndPoint> initialNodes = new List<IPEndPoint>();
 
         public ClientEngine Engine {
             get {
@@ -66,9 +67,7 @@ namespace BitSynk {
                 NotifyPropertyChanged();
             }
         }
-
-        private object parameter;
-
+        
         private DispatcherTimer timer;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -78,8 +77,8 @@ namespace BitSynk {
             }
         }
 
-        public Client(object parameter) {
-            this.parameter = parameter;
+        public Client(List<IPEndPoint> initialNodes) {
+            this.initialNodes = initialNodes;
 
             timer = new DispatcherTimer();
             timer.Interval = TimeSpan.FromSeconds(5);
@@ -170,11 +169,6 @@ namespace BitSynk {
         }
 
         private void InitDHT() {
-            byte[] nodes = null;
-            IEnumerable<Node> cnodes = null;
-
-            List<IPEndPoint> initialNodes = new List<IPEndPoint>();
-
             DhtListener dhtListner = new DhtListener(new IPEndPoint(IPAddress.Any, port));
             DhtEngine dht = new DhtEngine(dhtListner);
             Engine.RegisterDht(dht);
@@ -182,37 +176,8 @@ namespace BitSynk {
 
             try {
                 BEncodedList details = new BEncodedList();
-                Node node = new Node(NodeId.Create(), new IPEndPoint(IPAddress.Parse("2.49.83.10"), port));
 
-                initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetPublicIPAddress()), port));
-
-                string s = "";
-                var cnode = node.CompactNode();
-                details.Add(cnode);
-                cnodes = Node.FromCompactNode(cnode);
-                
-                //foreach(var detail in details) {
-                //    detail.
-                //}
-
-                //foreach(var n in Node.FromCompactNode(cnode)) {
-                //    s += n.EndPoint.Address + "\n";
-                //}
-
-                //var dencode = details.Encode();
-                
-                //File.WriteAllBytes("DhtNodes", dencode);// SaveNodes());
-
-                //nodes = dencode;// File.ReadAllBytes(dhtNodeFile);
-                
-                //var bnodes = Node.FromCompactNode(details); //Node.FromCompactNode(nodes);
-                //s = "";
-                //s += bnodes; //Node.FromCompactNode(nodes, 0).EndPoint.Address + "\n";
-                //foreach(var n in bnodes) {
-                //    s += n.EndPoint.Address + "\n";
-                //}
-
-                //File.WriteAllText("nodesString", s);
+                //initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetPublicIPAddress()), port));
             } catch {
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
@@ -628,11 +593,11 @@ namespace BitSynk {
                     AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
 
                     foreach(TorrentManager manager in Torrents) {
-                        BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
+                        BitSynkTorrentModel bitSynkTorrent = bitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
                         if(bitSynkTorrent == null) {
                             if(Application.Current != null) {
                                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                    BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
+                                    bitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
                                         Name = manager.Torrent.Name,
                                         Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
                                         Progress = manager.Progress,
@@ -641,7 +606,7 @@ namespace BitSynk {
                                         UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
                                     });
 
-                                    bitSynkTorrent = BitSynkTorrents.Last();
+                                    bitSynkTorrent = bitSynkTorrents.Last();
                                 }));
                             }
                         } else {
