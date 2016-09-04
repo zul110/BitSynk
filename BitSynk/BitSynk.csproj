@@ -61,10 +61,6 @@
     </ApplicationDefinition>
     <Compile Include="Converters\DoubleFormatConverter.cs" />
     <Compile Include="Converters\IntToBoolConverter.cs" />
-    <Compile Include="Helpers\Trackers.cs" />
-    <Compile Include="Models\BaseModel.cs" />
-    <Compile Include="Models\BitSynkPeerModel.cs" />
-    <Compile Include="Models\BitSynkTorrentModel.cs" />
     <Compile Include="Pages\BasePage.cs" />
     <Compile Include="Pages\HomePage.xaml.cs">
       <DependentUpon>HomePage.xaml</DependentUpon>
@@ -76,9 +72,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings.cs" />
-    <Compile Include="ViewModels\AuthViewModel.cs" />
-    <Compile Include="ViewModels\BaseViewModel.cs" />
-    <Compile Include="ViewModels\FileTrackerViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -89,11 +82,6 @@
     </Compile>
     <Compile Include="Bootstrap.cs" />
     <Compile Include="Client.cs" />
-    <Compile Include="Helpers\Constants.cs" />
-    <Compile Include="Helpers\Settings.cs" />
-    <Compile Include="Helpers\TestManualConnection.cs" />
-    <Compile Include="Helpers\Top10Listener.cs" />
-    <Compile Include="Helpers\Utils.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -144,6 +132,14 @@
       <Project>{fcdbc878-f9df-47c3-aed3-567e84556241}</Project>
       <Name>DatabaseManager</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Helpers\Helpers.csproj">
+      <Project>{8e4810fd-38b8-4911-9cc7-14d30bcb92bd}</Project>
+      <Name>Helpers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Models\Models.csproj">
+      <Project>{4db5c2bf-a77b-4b7f-b5b3-8afae8023050}</Project>
+      <Name>Models</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MonoTorrent.Dht\MonoTorrent.Dht.csproj">
       <Project>{7a2a7e73-fd43-4171-aa34-da413d35459e}</Project>
       <Name>MonoTorrent.Dht</Name>
@@ -156,12 +152,13 @@
       <Project>{579eb5d3-e3e8-422a-bfd5-4020f97c8568}</Project>
       <Name>StorageManager</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ViewModels\ViewModels.csproj">
+      <Project>{c084fe28-929a-49fd-9ef7-451576ce751f}</Project>
+      <Name>ViewModels</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Windows\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Helpers\Trackers.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

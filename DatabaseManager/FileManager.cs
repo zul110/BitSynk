@@ -1,5 +1,5 @@
 ﻿using DatabaseManager.Helpers;
-using DatabaseManager.Models;
+using Models;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;

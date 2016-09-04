@@ -1,13 +1,13 @@
-﻿using BitSynk.Helpers;
+﻿using Helpers;
 using DatabaseManager;
-using DatabaseManager.Models;
+using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.ViewModels {
+namespace ViewModels {
     public class AuthViewModel : BaseViewModel {
         private User user;
         public User User {
@@ -121,7 +121,7 @@ namespace BitSynk.ViewModels {
                 // Download the user's data, and add this device to the database under the user's data
                 // Remove the temporary user data from the database and locally
                 // Add the user's data to the local storage
-                if(await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), user.UserId, DeviceStatus.Online)) {
+                if(await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), user.UserId, DateTime.UtcNow)) {
                     await new FileManager().ChangeFileUser(user.UserId, Settings.USER_ID);
                     await new UserManager().RemoveUserAsync(Settings.USER_ID);
 
@@ -130,7 +130,7 @@ namespace BitSynk.ViewModels {
 
                     Settings.SetValue(Constants.USER_ID, user.UserId);
                 } else {
-                    await new DeviceManager().AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), user.UserId, DeviceStatus.Online);
+                    await new DeviceManager().AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), user.UserId, DateTime.UtcNow);
                 }
             } catch(Exception ex) {
                 throw ex;

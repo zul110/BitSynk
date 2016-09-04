@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DatabaseManager.Models {
-    public class User {
+namespace Models {
+    public class User : BaseModel {
         string userId;
         string userName;
         string userPassword;

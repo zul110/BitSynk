@@ -1,6 +1,4 @@
 ﻿using BencodeNET;
-using BencodeNET.Objects;
-using BitSynk.ViewModels;
 using MonoTorrent;
 using MonoTorrent.Common;
 using System;
@@ -12,7 +10,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.Helpers {
+namespace Helpers
+{
     public static class Utils {
         public static string GetLocalIPAddress() {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -49,10 +48,8 @@ namespace BitSynk.Helpers {
         }
 
         public static string CreateTorrent(string path, string savePath) {
-            // The class used for creating the torrent
             TorrentCreator c = new TorrentCreator();
 
-            // Add one tier which contains two trackers
             RawTrackerTier tier = new RawTrackerTier();
             //foreach(string tracker in new Trackers().trackers) {
             //    tier.Add(tracker.Trim());
@@ -62,7 +59,6 @@ namespace BitSynk.Helpers {
             //tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
             //tier.Add("http://" + Utils.GetPublicIPAddress() + ":10000/announce/");//Utils.GetLocalIPAddress() + ":10000");// "http://localhost/announce");
 
-            //c.Announces.Add(tier);
             c.Comment = "BitSynk";
             c.CreatedBy = "Zul";
             c.Publisher = "zul";
@@ -114,7 +110,7 @@ namespace BitSynk.Helpers {
             return File.ReadAllBytes(filePath);
         }
 
-        public static async Task<string> CreateFile(DatabaseManager.Models.File file) {
+        public static async Task<string> CreateFile(Models.File file) {
             string torrentFilePath = Settings.FILES_DIRECTORY + "\\" + GetTorrentFileName(file.FileName);
 
             if(!File.Exists(torrentFilePath)) {
@@ -132,7 +128,7 @@ namespace BitSynk.Helpers {
             return filePath;
         }
 
-        internal static string GetPublicIPAddress() {
+        public static string GetPublicIPAddress() {
             return new WebClient().DownloadString(new Uri("http://www.canihazip.com/s", UriKind.RelativeOrAbsolute));
         }
     }

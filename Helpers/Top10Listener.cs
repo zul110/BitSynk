@@ -14,7 +14,7 @@ using System.Threading;
 using System.Diagnostics;
 using System.IO;
 
-namespace BitSynk.Helpers {
+namespace Helpers {
     /// <summary>
     /// Keeps track of the X most recent number of events recorded by the listener. X is specified in the constructor
     /// </summary>

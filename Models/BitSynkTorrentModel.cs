@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.Models {
+namespace Models {
     public class BitSynkTorrentModel : BaseModel {
         private string name;
         public string Name

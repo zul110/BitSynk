@@ -1,4 +1,4 @@
-﻿using BitSynk.Helpers;
+﻿using Helpers;
 using BitSynk.Pages;
 using System;
 using System.Collections.Generic;

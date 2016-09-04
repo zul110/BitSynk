@@ -1,7 +1,7 @@
-﻿using BitSynk.Helpers;
-using BitSynk.ViewModels;
+﻿using Helpers;
+using ViewModels;
 using DatabaseManager;
-using DatabaseManager.Models;
+using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -49,9 +49,9 @@ namespace BitSynk {
             deviceManager = new DeviceManager();
 
             if(await deviceManager.GetDeviceAsync(Settings.DEVICE_ID) == null) {
-                await deviceManager.AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DeviceStatus.Online);
+                await deviceManager.AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DateTime.UtcNow);
             } else {
-                await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DeviceStatus.Online);
+                await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DateTime.UtcNow);
             }
         }
 

@@ -1,4 +1,4 @@
-﻿using BitSynk.Helpers;
+﻿using Helpers;
 using DatabaseManager;
 using MonoTorrent.Common;
 using System;
@@ -8,18 +8,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Threading;
-using BitSynk.Models;
+using ViewModels;
 
-namespace BitSynk.ViewModels {
+namespace ViewModels {
     public class FileTrackerViewModel : BaseViewModel {
-        private DispatcherTimer timer;
         public static List<string> knownFiles;
 
         public FileTrackerViewModel() {
-            timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(5);
-            timer.Tick += Timer_Tick;
-
             InitViewModel();
         }
 
@@ -31,12 +26,6 @@ namespace BitSynk.ViewModels {
             if(!Directory.Exists(Settings.FILES_DIRECTORY)) {
                 Directory.CreateDirectory(Settings.FILES_DIRECTORY);
             }
-            
-            //timer.Start();
-        }
-
-        private void Timer_Tick(object sender, EventArgs e) {
-            CheckForNewFiles();
         }
 
         public async Task<List<string>> CheckForNewFiles() {
@@ -90,7 +79,7 @@ namespace BitSynk.ViewModels {
             }
         }
 
-        public void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
+        public void RemoveFile(Models.BitSynkTorrentModel bitSynkTorrentModel) {
             DeleteFileLocally(bitSynkTorrentModel.Name);
             DeleteTorrent(bitSynkTorrentModel.Name);
             //AddFileToRemoveQueue(bitSynkTorrentModel);
@@ -108,7 +97,7 @@ namespace BitSynk.ViewModels {
         //    });
         //}
 
-        public async void DeleteFileFromDatabase(BitSynkTorrentModel bitSynkTorrentModel) {
+        public async void DeleteFileFromDatabase(Models.BitSynkTorrentModel bitSynkTorrentModel) {
             await new FileManager().RemoveFileByHashAsync(bitSynkTorrentModel.Hash, Settings.USER_ID);
         }
 
@@ -120,13 +109,13 @@ namespace BitSynk.ViewModels {
             File.Delete(Settings.FILES_DIRECTORY + "//" + fileName);
         }
 
-        public async Task<List<DatabaseManager.Models.File>> GetFilesToRemove(string userId) {
+        public async Task<List<Models.File>> GetFilesToRemove(string userId) {
             return await new FileManager().GetFilesToRemoveAsync(userId);
         }
 
         public async Task<List<string>> DeleteFilesInQueue() {
             List<string> filesToDelete = new List<string>();
-            foreach(DatabaseManager.Models.File file in await GetFilesToRemove(Settings.USER_ID)) {
+            foreach(Models.File file in await GetFilesToRemove(Settings.USER_ID)) {
                 DeleteFileLocally(file.FileName);
                 DeleteTorrent(file.FileName);
 

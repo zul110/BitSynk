@@ -1,6 +1,6 @@
-﻿using BitSynk.Helpers;
-using BitSynk.Models;
-using BitSynk.ViewModels;
+﻿using Helpers;
+using Models;
+using ViewModels;
 using DatabaseManager;
 using System;
 using System.Collections.Generic;
@@ -27,6 +27,8 @@ namespace BitSynk.Pages {
     /// Interaction logic for HomePage.xaml
     /// </summary>
     public partial class HomePage : BasePage, INotifyPropertyChanged {
+        private DeviceViewModel deviceVM;
+
         private Client _client;
         public Client client {
             get {
@@ -39,15 +41,10 @@ namespace BitSynk.Pages {
             }
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
-            if(PropertyChanged != null) {
-                PropertyChanged(this, new PropertyChangedEventArgs(property));
-            }
-        }
-
         public HomePage() {
             InitializeComponent();
+
+            deviceVM = new DeviceViewModel();
 
             this.DataContext = this;
         }
@@ -55,26 +52,20 @@ namespace BitSynk.Pages {
         private async void Page_Loaded(object sender, RoutedEventArgs e) {
             ClearBackEntries();
 
-            List<IPEndPoint> initialNodes = new List<IPEndPoint>();
-
-            DeviceManager deviceManager = new DeviceManager();
-
-            await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Online);
-
-            foreach(var device in await deviceManager.GetAllDevicesByUserAsync(Settings.USER_ID)) {
-                initialNodes.Add(new IPEndPoint(IPAddress.Parse(device.DeviceAddress), 52111));
-            }
-
-            client = new Client(initialNodes);
+            client = new Client(await deviceVM.GetInitialNodes());
             client.OnTorrentsAdded += Client_OnTorrentsAdded;
             client.OnPeerChanged += Client_OnPeerChanged;
 
+            InitClient();
+        }
+
+        private void InitClient() {
             BackgroundWorker bw = new BackgroundWorker();
 
             bw.DoWork += (s, ev) => {
-                client.StartEngine();//.StartEngineUsingTorrents();
+                client.StartEngine();
             };
-            
+
             bw.RunWorkerCompleted += (s, ev) => {
                 if(ev.Error != null) {
 
@@ -108,14 +99,12 @@ namespace BitSynk.Pages {
             }
         }
 
-        private void linkButton_Click(object sender, RoutedEventArgs e) {
-            GoToPage(new LinkDevicesPage());
+        private void torrentsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+            
         }
 
-        private void torrentsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            //var torrent = (sender as DataGrid).SelectedItem as BitSynk.Models.BitSynkTorrentModel;
-
-            //var peers = torrent.BitSynkPeers;
+        private void linkButton_Click(object sender, RoutedEventArgs e) {
+            GoToPage(new LinkDevicesPage());
         }
 
         private void browseButton_Click(object sender, RoutedEventArgs e) {

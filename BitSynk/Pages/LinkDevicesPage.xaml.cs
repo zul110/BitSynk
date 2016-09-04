@@ -1,5 +1,5 @@
-﻿using BitSynk.Helpers;
-using BitSynk.ViewModels;
+﻿using Helpers;
+using ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -6,7 +6,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.ViewModels {
+namespace ViewModels
+{
     public class BaseViewModel : INotifyPropertyChanged {
         public event PropertyChangedEventHandler PropertyChanged;
         protected void NotifyPropertyChanged([CallerMemberName] string property = "") {

@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DatabaseManager.Models {
-    public class File {
+namespace Models {
+    public class File : BaseModel {
         string fileId;
         string fileName;
         string fileHash;

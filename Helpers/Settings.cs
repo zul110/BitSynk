@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.Helpers {
+namespace Helpers {
     public static class Settings {
         private static string BASE_PATH = Environment.CurrentDirectory;
 
@@ -25,12 +25,14 @@ namespace BitSynk.Helpers {
 
         public static bool FIRST_RUN
         {
-            get {
+            get
+            {
                 string firstRun = GetValue(Constants.FIRST_RUN);
                 return (firstRun == null || firstRun == "") ? true : bool.Parse(firstRun);
             }
 
-            set {
+            set
+            {
                 SetValue(Constants.FIRST_RUN, value.ToString());
             }
         }

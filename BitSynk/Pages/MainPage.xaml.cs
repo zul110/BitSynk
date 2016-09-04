@@ -1,4 +1,4 @@
-﻿using BitSynk.Helpers;
+﻿using Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,11 +47,11 @@ namespace BitSynk.Pages {
         }
 
         private void GoToHomePage() {
-            GoToPage(new HomePage());//("/Pages/HomePage.xaml");
+            GoToPage(new HomePage());
         }
 
         private void GoToLinkDevicesPage() {
-            GoToPage(new LinkDevicesPage());// "/Pages/LinkDevicesPage.xaml");
+            GoToPage(new LinkDevicesPage());
         }
     }
 }

@@ -4,13 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DatabaseManager.Models {
-    public class Device {
+namespace Models {
+    public class Device : BaseModel {
         string deviceId;
         string deviceName;
         string deviceAddress;
         string userId;
         DeviceStatus deviceStatus;
+        DateTime lastSeen;
         
         public string DeviceId
         {
@@ -40,6 +41,12 @@ namespace DatabaseManager.Models {
         {
             get { return deviceStatus; }
             set { deviceStatus = value; }
+        }
+
+        public DateTime LastSeen
+        {
+            get { return lastSeen; }
+            set { lastSeen = value; }
         }
     }
 }

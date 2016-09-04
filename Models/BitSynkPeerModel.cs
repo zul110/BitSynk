@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.Models {
+namespace Models {
     public class BitSynkPeerModel : BaseModel {
         private Uri connectionUri;
         public Uri ConnectionUri

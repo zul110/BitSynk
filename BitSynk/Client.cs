@@ -1,6 +1,5 @@
-﻿using BitSynk.Helpers;
-using BitSynk.Models;
-using BitSynk.ViewModels;
+﻿using Helpers;
+using ViewModels;
 using DatabaseManager;
 using MonoTorrent;
 using MonoTorrent.BEncoding;
@@ -43,7 +42,7 @@ namespace BitSynk {
 
         private List<RawTrackerTier> trackers;
 
-        public ObservableCollection<BitSynkTorrentModel> bitSynkTorrents = new ObservableCollection<BitSynkTorrentModel>();
+        public ObservableCollection<Models.BitSynkTorrentModel> bitSynkTorrents = new ObservableCollection<Models.BitSynkTorrentModel>();
         List<IPEndPoint> initialNodes = new List<IPEndPoint>();
 
         public ClientEngine Engine {
@@ -195,7 +194,7 @@ namespace BitSynk {
 
             await fileTrackerVM.CheckForNewFiles();
 
-            List<DatabaseManager.Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
+            List<Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
             BEncodedDictionary fastResume = GetFastResumeFile();
 
@@ -434,7 +433,7 @@ namespace BitSynk {
                     Thread.Sleep(200);
                     await fileTrackerVM.CheckForNewFiles();
 
-                    List<DatabaseManager.Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
+                    List<Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
                     BEncodedDictionary fastResume = GetFastResumeFile();
 
@@ -593,7 +592,7 @@ namespace BitSynk {
                     AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
 
                     foreach(TorrentManager manager in Torrents) {
-                        BitSynkTorrentModel bitSynkTorrent = bitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
+                        Models.BitSynkTorrentModel bitSynkTorrent = bitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
                         if(bitSynkTorrent == null) {
                             if(Application.Current != null) {
                                 Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
@@ -638,11 +637,11 @@ namespace BitSynk {
                             AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
 
                         foreach(PeerId p in manager.GetPeers()) {
-                            BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
+                            Models.BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
                             if(bitSynkPeer == null) {
                                 if(Application.Current != null) {
                                     Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                        bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
+                                        bitSynkTorrent.BitSynkPeers.Add(new Models.BitSynkPeerModel() {
                                             ConnectionUri = p.Peer.ConnectionUri,
                                             DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
                                             UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
@@ -704,7 +703,7 @@ namespace BitSynk {
         }
 
         private static async void shutdown() {
-            await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DatabaseManager.Models.DeviceStatus.Offline);
+            await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DateTime.UtcNow);
 
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for(int i = 0; i < torrents.Count; i++) {

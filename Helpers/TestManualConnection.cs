@@ -13,7 +13,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.Helpers {
+namespace Helpers {
     public class CustomTracker : Tracker {
         public CustomTracker(Uri uri)
             : base(uri) {

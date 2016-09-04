@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BitSynk.Helpers {
+namespace Helpers {
     public static class Constants {
         public const string USER_ID = "USER_ID";
         public const string DEVICE_ID = "DEVICE_ID";

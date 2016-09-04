@@ -1,5 +1,5 @@
 ﻿using DatabaseManager.Helpers;
-using DatabaseManager.Models;
+using Models;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
@@ -9,16 +9,16 @@ using System.Threading.Tasks;
 
 namespace DatabaseManager {
     public class DeviceManager {
-        public async Task<bool> AddDeviceAsync(string deviceId, string deviceName, string deviceAddress, string userId, DeviceStatus deviceStatus) {
+        public async Task<bool> AddDeviceAsync(string deviceId, string deviceName, string deviceAddress, string userId, DateTime lastSeen) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO DEVICES (DEVICE_ID, DEVICE_NAME, DEVICE_ADDRESS, USER_ID, DEVICE_STATUS) VALUES (@deviceId, @deviceName, @deviceAddress, @userId, @deviceStatus)", connection);
+                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO DEVICES (DEVICE_ID, DEVICE_NAME, DEVICE_ADDRESS, USER_ID, LAST_SEEN) VALUES (@deviceId, @deviceName, @deviceAddress, @userId, @lastSeen)", connection);
                 insertCommand.Parameters.AddWithValue("@deviceId", deviceId);
                 insertCommand.Parameters.AddWithValue("@deviceName", deviceName);
                 insertCommand.Parameters.AddWithValue("@deviceAddress", deviceAddress);
                 insertCommand.Parameters.AddWithValue("@userId", userId);
-                insertCommand.Parameters.AddWithValue("@deviceStatus", deviceStatus.ToString());
+                insertCommand.Parameters.AddWithValue("@lastSeen", lastSeen);
 
                 int result = await insertCommand.ExecuteNonQueryAsync();
 
@@ -42,14 +42,14 @@ namespace DatabaseManager {
                         string deviceName = reader["DEVICE_NAME"].ToString();
                         string deviceAddress = reader["DEVICE_ADDRESS"].ToString();
                         string userId = reader["USER_ID"].ToString();
-                        string deviceStatus = reader["DEVICE_STATUS"].ToString();
+                        DateTime lastSeen = DateTime.Parse(reader["LAST_SEEN"].ToString());
 
                         Device device = new Device();
                         device.DeviceId = deviceId;
                         device.DeviceName = deviceName;
                         device.DeviceAddress = deviceAddress;
                         device.UserId = userId;
-                        device.DeviceStatus = (DeviceStatus)Enum.Parse(typeof(DeviceStatus), deviceStatus, true);
+                        device.LastSeen = lastSeen;
 
                         devices.Add(device);
                     }
@@ -74,14 +74,14 @@ namespace DatabaseManager {
                         string deviceName = reader["DEVICE_NAME"].ToString();
                         string deviceAddress = reader["DEVICE_ADDRESS"].ToString();
                         string userId = reader["USER_ID"].ToString();
-                        string deviceStatus = reader["DEVICE_STATUS"].ToString();
+                        DateTime lastSeen = DateTime.Parse(reader["LAST_SEEN"].ToString());
 
                         Device device = new Device();
                         device.DeviceId = deviceId;
                         device.DeviceName = deviceName;
                         device.DeviceAddress = deviceAddress;
                         device.UserId = userId;
-                        device.DeviceStatus = (DeviceStatus)Enum.Parse(typeof(DeviceStatus), deviceStatus, true);
+                        device.LastSeen = lastSeen;
 
                         devices.Add(device);
                     }
@@ -108,13 +108,13 @@ namespace DatabaseManager {
                         string deviceName = reader["DEVICE_NAME"].ToString();
                         string deviceAddress = reader["DEVICE_ADDRESS"].ToString();
                         string userId = reader["USER_ID"].ToString();
-                        string deviceStatus = reader["DEVICE_STATUS"].ToString();
+                        DateTime lastSeen = DateTime.Parse(reader["LAST_SEEN"].ToString());
 
                         device.DeviceId = deviceId;
                         device.DeviceName = deviceName;
                         device.DeviceAddress = deviceAddress;
                         device.UserId = userId;
-                        device.DeviceStatus = (DeviceStatus)Enum.Parse(typeof(DeviceStatus), deviceStatus, true);
+                        device.LastSeen = lastSeen;
                     }
 
                     return device;
@@ -122,7 +122,7 @@ namespace DatabaseManager {
             }
         }
 
-        public async Task<DeviceStatus> GetDeviceStatusByIdAsync(string deviceId) {
+        public async Task<DateTime> GetLastSeenByIdAsync(string deviceId) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
@@ -130,28 +130,18 @@ namespace DatabaseManager {
                 selectCommand.Parameters.AddWithValue("deviceId", deviceId);
 
                 using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
-                    DeviceStatus _deviceStatus = DeviceStatus.Unknown;
+                    DateTime lastSeen = DateTime.UtcNow;
 
                     while(reader.Read()) {
-                        //string deviceId = reader["DEVICE_ID"].ToString();
-                        //string deviceName = reader["DEVICE_NAME"].ToString();
-                        //string deviceAddress = reader["DEVICE_ADDRESS"].ToString();
-                        //string userId = reader["USER_ID"].ToString();
-                        string deviceStatus = reader["DEVICE_STATUS"].ToString();
-
-                        //device.DeviceId = deviceId;
-                        //device.DeviceName = deviceName;
-                        //device.DeviceAddress = deviceAddress;
-                        //device.UserId = userId;
-                        _deviceStatus = (DeviceStatus)Enum.Parse(typeof(DeviceStatus), deviceStatus, true);
+                        lastSeen = DateTime.Parse(reader["LAST_SEEN"].ToString());
                     }
 
-                    return _deviceStatus;
+                    return lastSeen;
                 }
             }
         }
 
-        public async Task<DeviceStatus> GetDeviceStatusByNameAsync(string deviceName) {
+        public async Task<DateTime> GetLastSeenByNameAsync(string deviceName) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
@@ -159,42 +149,36 @@ namespace DatabaseManager {
                 selectCommand.Parameters.AddWithValue("deviceName", deviceName);
 
                 using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
-                    DeviceStatus _deviceStatus = DeviceStatus.Unknown;
+                    DateTime lastSeen = DateTime.UtcNow;
 
                     while(reader.Read()) {
-                        //string deviceId = reader["DEVICE_ID"].ToString();
-                        //string deviceName = reader["DEVICE_NAME"].ToString();
-                        //string deviceAddress = reader["DEVICE_ADDRESS"].ToString();
-                        //string userId = reader["USER_ID"].ToString();
-                        string deviceStatus = reader["DEVICE_STATUS"].ToString();
-
-                        //device.DeviceId = deviceId;
-                        //device.DeviceName = deviceName;
-                        //device.DeviceAddress = deviceAddress;
-                        //device.UserId = userId;
-                        _deviceStatus = (DeviceStatus)Enum.Parse(typeof(DeviceStatus), deviceStatus, true);
+                        lastSeen = DateTime.Parse(reader["LAST_SEEN"].ToString());
                     }
 
-                    return _deviceStatus;
+                    return lastSeen;
                 }
             }
         }
 
-        public async Task<bool> UpdateDeviceAsync(string deviceId, string deviceName, string deviceAddress, string userId, DeviceStatus deviceStatus) {
+        public async Task<bool> UpdateDeviceAsync(string deviceId, string deviceName, string deviceAddress, string userId, DateTime lastSeen) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand updateCommand = new MySqlCommand("UPDATE DEVICES SET DEVICE_NAME = @deviceName, DEVICE_ADDRESS = @deviceAddress, USER_ID = @userId, DEVICE_STATUS = @deviceStatus WHERE DEVICE_ID = @deviceId", connection);
+                MySqlCommand updateCommand = new MySqlCommand("UPDATE DEVICES SET DEVICE_NAME = @deviceName, DEVICE_ADDRESS = @deviceAddress, USER_ID = @userId, LAST_SEEN = @lastSeen WHERE DEVICE_ID = @deviceId", connection);
                 updateCommand.Parameters.AddWithValue("@deviceId", deviceId);
                 updateCommand.Parameters.AddWithValue("@deviceName", deviceName);
                 updateCommand.Parameters.AddWithValue("@deviceAddress", deviceAddress);
                 updateCommand.Parameters.AddWithValue("@userId", userId);
-                updateCommand.Parameters.AddWithValue("@deviceStatus", deviceStatus.ToString());
+                updateCommand.Parameters.AddWithValue("@lastSeen", lastSeen);
 
                 int result = await updateCommand.ExecuteNonQueryAsync();
 
                 return result > 0 ? true : false;
             }
+        }
+
+        public async Task<bool> IsOnline(string deviceId) {
+            return (DateTime.UtcNow - (await GetLastSeenByIdAsync(deviceId))) < TimeSpan.FromMinutes(6);
         }
     }
 }
