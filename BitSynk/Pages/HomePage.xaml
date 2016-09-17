@@ -9,6 +9,13 @@
                 Title="HomePage"
                 Loaded="Page_Loaded">
 
+    <pages:BasePage.Resources>
+        <Style TargetType="Button">
+            <Setter Property="MinWidth"
+                    Value="50" />
+        </Style>
+    </pages:BasePage.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -45,17 +52,16 @@
                     Margin="6,0,0,0"
                     MinHeight="30"
                     Grid.Column="2"
-                    Content="Add"
-                    IsEnabled="{Binding ElementName=fileBox, Path=Text.Length, Converter={StaticResource intToBoolConverter}}"
-                    Click="addButton_Click" />
+                    Content="File"
+                    Click="addFileButton_Click" />
 
-            <Button x:Name="browseButton"
+            <Button x:Name="addFolderButtonButton"
                     Padding="6"
                     Margin="6,0,0,0"
                     MinHeight="30"
                     Grid.Column="3"
-                    Content="Browse..."
-                    Click="browseButton_Click"/>
+                    Content="Folder"
+                    Click="addFolderButton_Click"/>
         </Grid>
 
 
@@ -75,10 +81,33 @@
                   ColumnWidth="*"
                   IsReadOnly="True"
                   AutoGenerateColumns="False"
+                  HorizontalGridLinesBrush="LightGray"
+                  VerticalGridLinesBrush="LightGray"
                   MouseDoubleClick="torrentsDataGrid_MouseDoubleClick"
                   SelectionChanged="torrentsDataGrid_SelectionChanged">
             <DataGrid.ContextMenu>
-                <ContextMenu>
+                <ContextMenu Opened="ContextMenu_Opened">
+                    <!--<MenuItem x:Name="pauseMenuItem"
+                              Header="Pause" />
+
+                    <MenuItem x:Name="stopMenuItem"
+                              Header="Stop" />
+
+                    <MenuItem x:Name="playMenuItem"
+                              Header="Play" />
+
+                    <MenuItem x:Name="resumeMenuItem"
+                              Header="Resume" />-->
+
+                    <MenuItem x:Name="openMenuItem"
+                              Header="Open"
+                              IsEnabled="{Binding SelectedTorrent, Converter={StaticResource torrentStateToBoolConverter}}"
+                              Click="openMenuItem_Click"/>
+
+                    <MenuItem x:Name="showInExplorerMenuItem"
+                              Header="Show in explorer"
+                              Click="showInExplorerMenuItem_Click"/>
+
                     <MenuItem x:Name="removeMenuItem"
                               Header="Remove"
                               Click="removeMenuItem_Click" />
@@ -110,6 +139,8 @@
                 <DataGrid x:Name="peerDataGrid"
                           ColumnWidth="*"
                           AutoGenerateColumns="False"
+                          HorizontalGridLinesBrush="White"
+                          VerticalGridLinesBrush="White"
                           SelectionChanged="torrentsDataGrid_SelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Connection URI"

@@ -27,7 +27,7 @@ namespace ViewModels {
                 Directory.CreateDirectory(Settings.FILES_DIRECTORY);
             }
         }
-
+        
         public async Task<List<string>> CheckForNewFiles() {
             string hash = "";
 

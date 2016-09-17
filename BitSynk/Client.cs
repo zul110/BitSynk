@@ -42,6 +42,8 @@ namespace BitSynk {
 
         private List<RawTrackerTier> trackers;
 
+        List<string> files = new List<string>();
+
         public ObservableCollection<Models.BitSynkTorrentModel> bitSynkTorrents = new ObservableCollection<Models.BitSynkTorrentModel>();
         List<IPEndPoint> initialNodes = new List<IPEndPoint>();
 
@@ -184,131 +186,135 @@ namespace BitSynk {
             Engine.DhtEngine.Start(initialNodes);
         }
 
-        public async void StartEngineUsingTorrents() {
-            Torrent torrent = null;
+        //public async void StartEngineUsingTorrents() {
+        //    Torrent torrent = null;
 
-            FileManager fileManager = new FileManager();
-            FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
+        //    FileManager fileManager = new FileManager();
+        //    FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
 
-            await fileTrackerVM.DeleteFilesInQueue();
+        //    await fileTrackerVM.DeleteFilesInQueue();
 
-            await fileTrackerVM.CheckForNewFiles();
+        //    await fileTrackerVM.CheckForNewFiles();
 
-            List<Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
+        //    List<Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
-            BEncodedDictionary fastResume = GetFastResumeFile();
+        //    BEncodedDictionary fastResume = GetFastResumeFile();
 
-            // For each file in the torrents path that is a .torrent file, load it into the engine.
-            foreach(string file in Directory.GetFiles(torrentsPath)) {
-                if(file.EndsWith(".torrent")) {
-                    try {
-                        // Load the .torrent from the file into a Torrent instance
-                        // You can use this to do preprocessing should you need to
-                        torrent = Torrent.Load(file);
-                        Console.WriteLine(torrent.InfoHash.ToString());
-                    } catch(Exception e) {
-                        Console.Write("Couldn't decode {0}: ", file);
-                        Console.WriteLine(e.Message);
-                        continue;
-                    }
+        //    // For each file in the torrents path that is a .torrent file, load it into the engine.
+        //    foreach(string file in Directory.GetFiles(torrentsPath)) {
+        //        if(file.EndsWith(".torrent")) {
+        //            try {
+        //                // Load the .torrent from the file into a Torrent instance
+        //                // You can use this to do preprocessing should you need to
+        //                torrent = Torrent.Load(file);
+        //                Console.WriteLine(torrent.InfoHash.ToString());
+        //            } catch(Exception e) {
+        //                Console.Write("Couldn't decode {0}: ", file);
+        //                Console.WriteLine(e.Message);
+        //                continue;
+        //            }
 
-                    fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
+        //            fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
 
-                    // When any preprocessing has been completed, you create a TorrentManager
-                    // which you then register with the engine.
-                    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                    torrent = manager.Torrent;
-                    if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                        manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                    //Engine.Register(manager);
+        //            // When any preprocessing has been completed, you create a TorrentManager
+        //            // which you then register with the engine.
+        //            TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+        //            if(!Torrents.Contains(manager)) {
+        //                torrent = manager.Torrent;
+        //                if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+        //                    manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+        //                //Engine.Register(manager);
 
-                    // Store the torrent manager in our list so we can access it later
-                    Torrents.Add(manager);
-                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
-                }
-            }
+        //                // Store the torrent manager in our list so we can access it later
+        //                Torrents.Add(manager);
+        //                manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+        //            }
+        //        }
+        //    }
 
-            if(filesToDownload != null && filesToDownload.Count > 0) {
-                foreach(var file in filesToDownload) {
-                    if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
-                        //hashes.Add(file.FileHash);
-                        string torrentFilePath = await Utils.CreateFile(file);
+        //    if(filesToDownload != null && filesToDownload.Count > 0) {
+        //        foreach(var file in filesToDownload) {
+        //            if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
+        //                //hashes.Add(file.FileHash);
+        //                string torrentFilePath = await Utils.CreateFile(file);
 
-                        try {
-                            // Load the .torrent from the file into a Torrent instance
-                            // You can use this to do preprocessing should you need to
-                            torrent = Torrent.Load(torrentFilePath);
-                            Console.WriteLine(torrent.InfoHash.ToString());
-                        } catch(Exception e) {
-                            Console.Write("Couldn't decode {0}: ", file);
-                            Console.WriteLine(e.Message);
-                            continue;
-                        }
+        //                try {
+        //                    // Load the .torrent from the file into a Torrent instance
+        //                    // You can use this to do preprocessing should you need to
+        //                    torrent = Torrent.Load(torrentFilePath);
+        //                    Console.WriteLine(torrent.InfoHash.ToString());
+        //                } catch(Exception e) {
+        //                    Console.Write("Couldn't decode {0}: ", file);
+        //                    Console.WriteLine(e.Message);
+        //                    continue;
+        //                }
 
-                        //fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
+        //                //fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
 
-                        // When any preprocessing has been completed, you create a TorrentManager
-                        // which you then register with the engine.
-                        TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                        if(!Torrents.Contains(manager)) {
-                            torrent = manager.Torrent;
+        //                // When any preprocessing has been completed, you create a TorrentManager
+        //                // which you then register with the engine.
+        //                TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+        //                if(!Torrents.Contains(manager)) {
+        //                    torrent = manager.Torrent;
 
-                            if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
-                                manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                                //Engine.Register(manager);
-                            }
+        //                    if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
+        //                        manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+        //                        //Engine.Register(manager);
+        //                    }
 
-                            Torrents.Add(manager);
+        //                    Torrents.Add(manager);
 
-                            manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
-                        }
-                    }
-                }
-            }
+        //                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+        //                }
+        //            }
+        //        }
+        //    }
 
-            // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
-            // the client again
-            if(Torrents.Count == 0) {
-                Console.WriteLine("No torrents found in the Torrents directory");
-                //Console.WriteLine("Exiting...");
-                //Engine.Dispose();
-                //return;
-            } else {
-                TorrentsAdded();
-            }
+        //    // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
+        //    // the client again
+        //    if(Torrents.Count == 0) {
+        //        Console.WriteLine("No torrents found in the Torrents directory");
+        //        //Console.WriteLine("Exiting...");
+        //        //Engine.Dispose();
+        //        //return;
+        //    } else {
+        //        TorrentsAdded();
+        //    }
 
-            // For each torrent manager we loaded and stored in our list, hook into the events
-            // in the torrent manager and start the engine.
-            foreach(TorrentManager manager in Torrents) {
-                if(Engine.Torrents.Where(t => t.InfoHash.Hash.ToString() == manager.InfoHash.Hash.ToString()).Count() < 1) {
-                    // Every time a piece is hashed, this is fired.
-                    manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
-                        lock(listener)
-                            listener.WriteLine(string.Format("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
-                    };
+        //    // For each torrent manager we loaded and stored in our list, hook into the events
+        //    // in the torrent manager and start the engine.
+        //    foreach(TorrentManager manager in Torrents) {
+        //        if(Engine.Torrents.Where(t => t.InfoHash.Hash.ToString() == manager.InfoHash.Hash.ToString()).Count() < 1) {
+        //            // Every time a piece is hashed, this is fired.
+        //            manager.PieceHashed += delegate (object o, PieceHashedEventArgs e) {
+        //                lock(listener)
+        //                    listener.WriteLine(string.Format("Piece Hashed: {0} - {1}", e.PieceIndex, e.HashPassed ? "Pass" : "Fail"));
+        //            };
 
-                    // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
-                    manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
-                        lock(listener)
-                            listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
-                    };
+        //            // Every time the state changes (Stopped -> Seeding -> Downloading -> Hashing) this is fired
+        //            manager.TorrentStateChanged += delegate (object o, TorrentStateChangedEventArgs e) {
+        //                lock(listener)
+        //                    listener.WriteLine("OldState: " + e.OldState.ToString() + " NewState: " + e.NewState.ToString());
+        //            };
 
-                    // Every time the tracker's state changes, this is fired
-                    foreach(TrackerTier tier in manager.TrackerManager) {
-                        foreach(Tracker t in tier.Trackers) {
-                            t.AnnounceComplete += delegate (object sender, AnnounceResponseEventArgs e) {
-                                listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
-                            };
-                        }
-                    }
+        //            // Every time the tracker's state changes, this is fired
+        //            foreach(TrackerTier tier in manager.TrackerManager) {
+        //                foreach(Tracker t in tier.Trackers) {
+        //                    t.AnnounceComplete += delegate (object sender, AnnounceResponseEventArgs e) {
+        //                        listener.WriteLine(string.Format("{0}: {1}", e.Successful, e.Tracker.ToString()));
+        //                    };
+        //                }
+        //            }
 
-                    Engine.Register(manager);
+        //            Engine.Register(manager);
 
-                    // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                    manager.Start();
-                }
-            }
-        }
+        //            //if(manager.State != TorrentState.Stopped && manager.State != TorrentState.Paused) {
+        //                // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
+        //                manager.Start();
+        //            //}
+        //        }
+        //    }
+        //}
 
         public void AddNewTorrent(string filePath) {
             BackgroundWorker bw = new BackgroundWorker();
@@ -324,9 +330,9 @@ namespace BitSynk {
                     new FileTrackerViewModel().AddFileToDatabase(Path.GetFileName(fileCopy), Utils.GetTorrentInfoHash(torrentFilePath), torrentFilePath);
 
                     Torrent torrent = null;
-                    
+
                     FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
-                    
+
                     BEncodedDictionary fastResume = GetFastResumeFile();
 
                     try {
@@ -338,11 +344,12 @@ namespace BitSynk {
                         Console.Write("Couldn't decode {0}: ", filePath);
                         Console.WriteLine(e.Message);
                     }
-                
+
                     // When any preprocessing has been completed, you create a TorrentManager
                     // which you then register with the engine.
                     TorrentManager manager1 = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                    if(Engine.Torrents.Where(t => t.InfoHash.Hash.ToString() == manager1.InfoHash.Hash.ToString()).Count() < 1) {
+                    //if(Engine.Torrents.Where(t => t.InfoHash.Hash.ToString() == manager1.InfoHash.Hash.ToString()).Count() < 1) {
+                    if(!Torrents.Contains(manager1)) {
                         torrent = manager1.Torrent;
 
                         if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
@@ -388,8 +395,10 @@ namespace BitSynk {
                             engine.Register(manager);
                         }
 
+                        //if(manager.State != TorrentState.Stopped && manager.State != TorrentState.Paused) {
                         // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
                         manager.Start();
+                        //}
                     }
 
                     Engine.StartAll();
@@ -437,9 +446,11 @@ namespace BitSynk {
 
                     BEncodedDictionary fastResume = GetFastResumeFile();
 
+                    files = new List<string>();
+
                     // For each file in the torrents path that is a .torrent file, load it into the engine.
                     foreach(string file in Directory.GetFiles(torrentsPath)) {
-                        if(Torrents.Where(t => t.SavePath == downloadsPath).Count() < 1) {
+                        if(Torrents.Where(t => t.SavePath + "\\" + t.Torrent.Name == file).Count() < 1) {
                             if(file.EndsWith(".torrent")) {
                                 try {
                                     // Load the .torrent from the file into a Torrent instance
@@ -457,14 +468,24 @@ namespace BitSynk {
                                 // When any preprocessing has been completed, you create a TorrentManager
                                 // which you then register with the engine.
                                 TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                                torrent = manager.Torrent;
-                                if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                                    manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                                //Engine.Register(manager);
+                                if(!Torrents.Contains(manager)) {
+                                    torrent = manager.Torrent;
+                                    if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                                        manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                                    //Engine.Register(manager);
 
-                                // Store the torrent manager in our list so we can access it later
-                                Torrents.Add(manager);
-                                manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                                    // Store the torrent manager in our list so we can access it later
+                                    Torrents.Add(manager);
+                                    manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                                }
+                            } else {
+                                if(!files.Contains(file)) {
+                                    files.Add(file);
+                                }
+                            }
+                        } else {
+                            if(!file.EndsWith(".torrent") && !files.Contains(file)) {
+                                files.Add(file);
                             }
                         }
                     }
@@ -504,6 +525,27 @@ namespace BitSynk {
                         }
                     }
 
+                    for(int i = 0; i < Torrents.Count; i++) {
+                        if(files.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() < 1) {
+                            //await fileManager.RemoveFileByHashAsync(Torrents[i].InfoHash.Hash.ToString().Replace("-", ""), Settings.USER_ID);
+                            //Torrents.RemoveAt(i);
+                            fileTrackerVM.RemoveFile(bitSynkTorrents[i]);
+
+                            await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                bitSynkTorrents.Remove(bitSynkTorrents.Where(t => t.Hash == bitSynkTorrents[i].Hash).FirstOrDefault());
+                            }));
+                            
+                            Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == bitSynkTorrents[i].Hash).FirstOrDefault());
+                        }
+                    }
+
+                    //for(int i = 0; i < bitSynkTorrents.Count; i++) {
+                    //    if(bitSynkTorrents.Where(f => Torrents[i].Torrent.Name == f.Name).Count() < 1) {
+                    //        fileTrackerVM.RemoveFile(bitSynkTorrents[i]);
+                    //        bitSynkTorrents.RemoveAt(i);
+                    //    }
+                    //}
+
                     // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
                     // the client again
                     if(Torrents.Count == 0) {
@@ -539,8 +581,10 @@ namespace BitSynk {
 
                             Engine.Register(manager);
 
-                            // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                            manager.Start();
+                            if(manager.State != TorrentState.Stopped) {
+                                // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
+                                manager.Start();
+                            }
                         } else {
                             if(!Engine.Disposed) {
                                 if(manager.State == TorrentState.Stopped) {
@@ -548,7 +592,10 @@ namespace BitSynk {
                                         Engine.Register(manager);
                                     }
 
-                                    manager.Start();
+                                    //if(manager.State != TorrentState.Stopped && manager.State != TorrentState.Paused) {
+                                        // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
+                                        manager.Start();
+                                    //}
                                 }
                             }
                         }

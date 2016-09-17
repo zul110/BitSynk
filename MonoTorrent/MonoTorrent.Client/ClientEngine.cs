@@ -394,7 +394,8 @@ namespace MonoTorrent.Client
             CheckDisposed();
             MainLoop.QueueWait((MainLoopTask)delegate {
                 for (int i = 0; i < torrents.Count; i++)
-                    torrents[i].Start();
+                    if(torrents[i].State != TorrentState.Stopped && torrents[i].State != TorrentState.Paused)
+                        torrents[i].Start();
             });
         }
 

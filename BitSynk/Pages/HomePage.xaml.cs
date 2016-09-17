@@ -21,6 +21,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Threading;
+using Microsoft.WindowsAPICodePack.Dialogs;
 
 namespace BitSynk.Pages {
     /// <summary>
@@ -40,6 +41,17 @@ namespace BitSynk.Pages {
                 NotifyPropertyChanged();
             }
         }
+
+        private BitSynkTorrentModel selectedTorrent;
+        public BitSynkTorrentModel SelectedTorrent
+        {
+            get { return selectedTorrent; }
+            set {
+                selectedTorrent = value;
+                NotifyPropertyChanged();
+            }
+        }
+
 
         public HomePage() {
             InitializeComponent();
@@ -107,33 +119,50 @@ namespace BitSynk.Pages {
             GoToPage(new LinkDevicesPage());
         }
 
-        private void browseButton_Click(object sender, RoutedEventArgs e) {
-            Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
-            dialog.ValidateNames = false;
-            dialog.CheckFileExists = false;
-            dialog.CheckPathExists = false;
+        private void addFileButton_Click(object sender, RoutedEventArgs e) {
+            var dialog = new CommonOpenFileDialog();
+            dialog.IsFolderPicker = false;
+            dialog.EnsureValidNames = true;
+            dialog.EnsureFileExists = true;
+            dialog.EnsurePathExists = true;
 
-            dialog.FileName = "folder";
-            
-            Nullable<bool> result = dialog.ShowDialog();
-            
-            if(result == true) {
+            CommonFileDialogResult result = dialog.ShowDialog();
+
+            if(result == CommonFileDialogResult.Ok) {
                 string filename = dialog.FileName;
+                fileBox.Text = filename;
 
-                if(Path.GetFileName(filename) == "folder") {
-                    fileBox.Text = Path.GetDirectoryName(filename);
-                } else {
-                    fileBox.Text = filename;
-                }
+                AddFileOrDirectory();
+            } 
+            //Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
+            //dialog.ValidateNames = false;
+            //dialog.CheckFileExists = false;
+            //dialog.CheckPathExists = false;
 
-                if(Settings.AUTO_ADD) {
-                    AddFileOrDirectory();
-                }
-            }
+            //Nullable<bool> result = dialog.ShowDialog();
+
+            //if(result == true) {
+            //    string filename = dialog.FileName;
+            //    fileBox.Text = filename;
+            
+            //}
         }
 
-        private void addButton_Click(object sender, RoutedEventArgs e) {
-            AddFileOrDirectory();
+        private void addFolderButton_Click(object sender, RoutedEventArgs e) {
+            var dialog = new CommonOpenFileDialog();
+            dialog.IsFolderPicker = true;
+            dialog.EnsureValidNames = true;
+            dialog.EnsureFileExists = true;
+            dialog.EnsurePathExists = true;
+
+            CommonFileDialogResult result = dialog.ShowDialog();
+
+            if(result == CommonFileDialogResult.Ok) {
+                string filename = dialog.FileName;
+                fileBox.Text = filename;
+
+                AddFileOrDirectory();
+            }
         }
 
         private void AddFileOrDirectory() {
@@ -144,11 +173,13 @@ namespace BitSynk.Pages {
 
         private void torrentsDataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e) {
             if(torrentsDataGrid.SelectedItem != null) {
-                string directory = Settings.FILES_DIRECTORY;
-                string file = (torrentsDataGrid.SelectedItem as BitSynkTorrentModel).Name;
-                string fullPath = directory + "//" + file;
-
-                Process.Start(directory);
+                var selectedTorrent = client.Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == (torrentsDataGrid.SelectedItem as BitSynkTorrentModel).Hash).FirstOrDefault();
+                
+                if(selectedTorrent.State == MonoTorrent.Common.TorrentState.Paused) {
+                    selectedTorrent.Start();
+                } else {
+                    selectedTorrent.Pause();
+                }
             }
         }
 
@@ -161,6 +192,24 @@ namespace BitSynk.Pages {
 
             client.bitSynkTorrents.Remove(client.bitSynkTorrents.Where(t => t.Hash == bitSynkTorrentModel.Hash).FirstOrDefault());
             client.Torrents.Remove(client.Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == bitSynkTorrentModel.Hash).FirstOrDefault());
+        }
+
+        private void openMenuItem_Click(object sender, RoutedEventArgs e) {
+            string directory = Settings.FILES_DIRECTORY;
+            string file = (torrentsDataGrid.SelectedItem as BitSynkTorrentModel).Name;
+            string fullPath = directory + "//" + file;
+
+            Process.Start(fullPath);
+        }
+
+        private void showInExplorerMenuItem_Click(object sender, RoutedEventArgs e) {
+            string directory = Settings.FILES_DIRECTORY;
+
+            Process.Start(directory);
+        }
+
+        private void ContextMenu_Opened(object sender, RoutedEventArgs e) {
+            SelectedTorrent = torrentsDataGrid.SelectedItem as BitSynkTorrentModel;
         }
     }
 }
