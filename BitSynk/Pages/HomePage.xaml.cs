@@ -116,6 +116,8 @@ namespace BitSynk.Pages {
         }
 
         private void linkButton_Click(object sender, RoutedEventArgs e) {
+            LinkDevicesPage.PARENT_PAGE = Constants.HOME_PAGE;
+
             GoToPage(new LinkDevicesPage());
         }
 

@@ -17,5 +17,8 @@ namespace Helpers {
         public const string DEFAULT_DOWNLOADS_DIRECTORY_NAME = "Downloads";
 
         public const string FIRST_RUN = "FIRST_RUN";
+
+        public const string MAIN_PAGE = "MAIN";
+        public const string HOME_PAGE = "PAGE";
     }
 }
