@@ -403,13 +403,17 @@ namespace BitSynk {
                         if(files.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() < 1) {
                             //await fileManager.RemoveFileByHashAsync(Torrents[i].InfoHash.Hash.ToString().Replace("-", ""), Settings.USER_ID);
                             //Torrents.RemoveAt(i);
-                            fileTrackerVM.RemoveFile(bitSynkTorrents[i]);
+                            if(bitSynkTorrents.Count > i) {
+                                fileTrackerVM.RemoveFile(bitSynkTorrents[i]);
 
-                            await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                bitSynkTorrents.Remove(bitSynkTorrents.Where(t => t.Hash == bitSynkTorrents[i].Hash).FirstOrDefault());
-                            }));
-                            
-                            Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == bitSynkTorrents[i].Hash).FirstOrDefault());
+                                await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                    bitSynkTorrents.Remove(bitSynkTorrents.Where(t => t.Hash == bitSynkTorrents[i].Hash).FirstOrDefault());
+                                }));
+
+                                if(bitSynkTorrents.Count > i) {
+                                    Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == bitSynkTorrents[i].Hash).FirstOrDefault());
+                                }
+                            }
                         }
                     }
 

@@ -132,7 +132,7 @@ namespace Helpers
             // Get the subdirectories for the specified directory.
             DirectoryInfo dir = new DirectoryInfo(folder);
 
-            string destinationFolder = dir.Name; // Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(folder);
+            string destinationFolder = Settings.FILES_DIRECTORY + "\\" + dir.Name; // Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(folder);
 
             if(!dir.Exists) {
                 throw new DirectoryNotFoundException(
@@ -159,7 +159,7 @@ namespace Helpers
                 await CopyFolder(subdir.FullName);
             }
 
-            return Settings.FILES_DIRECTORY + "//" + Path.GetFileNameWithoutExtension(folder);
+            return Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(folder);
         }
 
         public static string GetPublicIPAddress() {

@@ -105,8 +105,28 @@ namespace ViewModels {
             File.Delete(Settings.FILES_DIRECTORY + "//" + Path.GetFileNameWithoutExtension(fileName) + ".torrent");
         }
 
-        public void DeleteFileLocally(string fileName) {
-            File.Delete(Settings.FILES_DIRECTORY + "//" + fileName);
+        public async void DeleteFileLocally(string fileName) {
+            string fileOrFolder = Settings.FILES_DIRECTORY + "\\" + fileName;
+
+            if(File.Exists(fileOrFolder)) {
+                File.Delete(fileOrFolder);
+            } else if(Directory.Exists(fileOrFolder)) {
+                var dir = new DirectoryInfo(fileOrFolder);
+
+                await SetAttributesNormal(dir);
+                
+                Directory.Delete(dir.FullName, true);
+            }
+        }
+
+        private async Task SetAttributesNormal(DirectoryInfo dir) {
+            foreach(var subDir in dir.GetDirectories()) {
+                await SetAttributesNormal(subDir);
+                subDir.Attributes = FileAttributes.Normal;
+            }
+            foreach(var file in dir.GetFiles()) {
+                file.Attributes = FileAttributes.Normal;
+            }
         }
 
         public async Task<List<Models.File>> GetFilesToRemove(string userId) {
