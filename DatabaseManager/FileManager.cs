@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace DatabaseManager
 {
-    public class FileManager {
+    public class FileManager : BaseDatabaseManager {
         public async Task<List<File>> GetAllFilesAsync() {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
@@ -83,8 +83,12 @@ namespace DatabaseManager
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM FILES WHERE USER_ID = @userId", connection);
-                selectCommand.Parameters.AddWithValue("@userId", _userId);
+                string[] fields = { "*" };
+
+                Dictionary<string, KeyValuePair<string, string>> paramsAndValues = new Dictionary<string, KeyValuePair<string, string>>();
+                paramsAndValues.Add("USER_ID", new KeyValuePair<string, string>("@userId", _userId));
+
+                MySqlCommand selectCommand = SelectCommand(connection, "FILES", fields, paramsAndValues);
 
                 using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
                     List<File> files = new List<File>();

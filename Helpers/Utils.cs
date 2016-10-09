@@ -121,11 +121,45 @@ namespace Helpers
         }
 
         public static async Task<string> CopyFile(string file) {
-            string filePath = Settings.FILES_DIRECTORY + "\\" + Path.GetFileName(file);
+            string filePath = Settings.FILES_DIRECTORY + "\\" + Path.GetDirectoryName(file);
 
             File.Copy(file, filePath);
 
             return filePath;
+        }
+
+        public static async Task<string> CopyFolder(string folder) {
+            // Get the subdirectories for the specified directory.
+            DirectoryInfo dir = new DirectoryInfo(folder);
+
+            string destinationFolder = dir.Name; // Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(folder);
+
+            if(!dir.Exists) {
+                throw new DirectoryNotFoundException(
+                    "Source directory does not exist or could not be found: "
+                    + folder);
+            }
+
+            DirectoryInfo[] dirs = dir.GetDirectories();
+            // If the destination directory doesn't exist, create it.
+            if(!Directory.Exists(destinationFolder)) {
+                Directory.CreateDirectory(destinationFolder);
+            }
+
+            // Get the files in the directory and copy them to the new location.
+            FileInfo[] files = dir.GetFiles();
+            foreach(FileInfo file in files) {
+                string temppath = Path.Combine(destinationFolder, file.Name);
+                file.CopyTo(temppath, false);
+            }
+
+            // If copying subdirectories, copy them and their contents to new location.
+            foreach(DirectoryInfo subdir in dirs) {
+                string temppath = Path.Combine(destinationFolder, subdir.Name);
+                await CopyFolder(subdir.FullName);
+            }
+
+            return Settings.FILES_DIRECTORY + "//" + Path.GetFileNameWithoutExtension(folder);
         }
 
         public static string GetPublicIPAddress() {

@@ -133,19 +133,7 @@ namespace BitSynk.Pages {
                 fileBox.Text = filename;
 
                 AddFileOrDirectory();
-            } 
-            //Microsoft.Win32.OpenFileDialog dialog = new Microsoft.Win32.OpenFileDialog();
-            //dialog.ValidateNames = false;
-            //dialog.CheckFileExists = false;
-            //dialog.CheckPathExists = false;
-
-            //Nullable<bool> result = dialog.ShowDialog();
-
-            //if(result == true) {
-            //    string filename = dialog.FileName;
-            //    fileBox.Text = filename;
-            
-            //}
+            }
         }
 
         private void addFolderButton_Click(object sender, RoutedEventArgs e) {
@@ -161,13 +149,13 @@ namespace BitSynk.Pages {
                 string filename = dialog.FileName;
                 fileBox.Text = filename;
 
-                AddFileOrDirectory();
+                AddFileOrDirectory(true);
             }
         }
 
-        private void AddFileOrDirectory() {
+        private void AddFileOrDirectory(bool isFolder = false) {
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                client.AddNewTorrent(fileBox.Text);
+                client.AddNewTorrent(fileBox.Text, isFolder);
             }));
         }
 

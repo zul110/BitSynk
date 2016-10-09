@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace DatabaseManager {
-    public class UserManager {
+    public class UserManager : BaseDatabaseManager {
         public async Task<bool> AddUserIdAsync(string userId) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
@@ -153,9 +153,17 @@ namespace DatabaseManager {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM USERS WHERE USER_EMAIL = @userEmail AND USER_PASSWORD = @userPassword", connection);
-                selectCommand.Parameters.AddWithValue("@userEmail", _userEmail);
-                selectCommand.Parameters.AddWithValue("@userPassword", _userPassword);
+                string[] fields = { "*" };
+
+                Dictionary<string, KeyValuePair<string, string>> paramsAndValues = new Dictionary<string, KeyValuePair<string, string>>();
+                paramsAndValues.Add("USER_EMAIL", new KeyValuePair<string, string>("@userEmail", _userEmail));
+                paramsAndValues.Add("USER_PASSWORD", new KeyValuePair<string, string>("@userPassword", _userPassword));
+
+                MySqlCommand selectCommand = SelectCommand(connection, "USERS", fields, paramsAndValues);
+
+                //MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM USERS WHERE USER_EMAIL = @userEmail AND USER_PASSWORD = @userPassword", connection);
+                //selectCommand.Parameters.AddWithValue("@userEmail", _userEmail);
+                //selectCommand.Parameters.AddWithValue("@userPassword", _userPassword);
 
                 using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
                     User user = null;
