@@ -20,8 +20,12 @@ namespace BitSynk.Pages {
     /// Interaction logic for LinkDevicesPage.xaml
     /// </summary>
     public partial class LinkDevicesPage : BasePage {
+        public static string PARENT_PAGE = Constants.MAIN_PAGE;
+
         public LinkDevicesPage() {
             InitializeComponent();
+
+            skipButton.Visibility = PARENT_PAGE == Constants.MAIN_PAGE ? Visibility.Visible : Visibility.Collapsed;
 
             codeBlock.Text = Settings.USER_ID.Substring(0, 5);
         }
@@ -48,6 +52,10 @@ namespace BitSynk.Pages {
             } else {
                 MessageBox.Show("Invalid code. You cannot link this device to itself!");
             }
+        }
+
+        private void skipButton_Click(object sender, RoutedEventArgs e) {
+            GoToPage(new HomePage());
         }
     }
 }

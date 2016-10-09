@@ -43,6 +43,17 @@
                     Content="Link"
                     Padding="12,6"
                     Click="linkButton_Click" />
+
+            <Button x:Name="skipButton"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Margin="0,12"
+                    Content="Skip"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    Click="skipButton_Click"
+                    Foreground="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
         </StackPanel>
     </Grid>
 </pages:BasePage>
