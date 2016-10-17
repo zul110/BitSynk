@@ -43,6 +43,7 @@ namespace BitSynk {
         private List<RawTrackerTier> trackers;
 
         List<string> files = new List<string>();
+        List<string> folders = new List<string>();
 
         public ObservableCollection<Models.BitSynkTorrentModel> bitSynkTorrents = new ObservableCollection<Models.BitSynkTorrentModel>();
         List<IPEndPoint> initialNodes = new List<IPEndPoint>();
@@ -321,6 +322,7 @@ namespace BitSynk {
                     BEncodedDictionary fastResume = GetFastResumeFile();
 
                     files = new List<string>();
+                    folders = new List<string>();
 
                     // For each file in the torrents path that is a .torrent file, load it into the engine.
                     foreach(string file in Directory.GetFiles(torrentsPath)) {
@@ -362,6 +364,47 @@ namespace BitSynk {
                                 files.Add(file);
                             }
                         }
+                    }
+
+                    foreach(string folder in Directory.GetDirectories(torrentsPath)) {
+                        //if(Torrents.Where(t => t.SavePath + "\\" + t.Torrent.Name == folder).Count() < 1) {
+                            //if(file.EndsWith(".torrent")) {
+                            //    try {
+                            //        // Load the .torrent from the file into a Torrent instance
+                            //        // You can use this to do preprocessing should you need to
+                            //        torrent = Torrent.Load(file);
+                            //        Console.WriteLine(torrent.InfoHash.ToString());
+                            //    } catch(Exception e) {
+                            //        Console.Write("Couldn't decode {0}: ", file);
+                            //        Console.WriteLine(e.Message);
+                            //        continue;
+                            //    }
+
+                            //    fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
+
+                            //    // When any preprocessing has been completed, you create a TorrentManager
+                            //    // which you then register with the engine.
+                            //    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                            //    if(!Torrents.Contains(manager)) {
+                            //        torrent = manager.Torrent;
+                            //        if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                            //            manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+                            //        //Engine.Register(manager);
+
+                            //        // Store the torrent manager in our list so we can access it later
+                            //        Torrents.Add(manager);
+                            //        manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                            //    }
+                            //} else {
+                                //if(!folders.Contains(folder)) {
+                                //    folders.Add(folder);
+                                //}
+                            //}
+                        //} else {
+                            if(!folders.Contains(folder)) {
+                                folders.Add(folder);
+                            }
+                        //}
                     }
 
                     if(filesToDownload != null && filesToDownload.Count > 0) {
@@ -416,13 +459,6 @@ namespace BitSynk {
                             }
                         }
                     }
-
-                    //for(int i = 0; i < bitSynkTorrents.Count; i++) {
-                    //    if(bitSynkTorrents.Where(f => Torrents[i].Torrent.Name == f.Name).Count() < 1) {
-                    //        fileTrackerVM.RemoveFile(bitSynkTorrents[i]);
-                    //        bitSynkTorrents.RemoveAt(i);
-                    //    }
-                    //}
 
                     // If we loaded no torrents, just exist. The user can put files in the torrents directory and start
                     // the client again

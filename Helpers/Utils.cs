@@ -121,7 +121,7 @@ namespace Helpers
         }
 
         public static async Task<string> CopyFile(string file) {
-            string filePath = Settings.FILES_DIRECTORY + "\\" + Path.GetDirectoryName(file);
+            string filePath = Settings.FILES_DIRECTORY + "\\" + Path.GetFileName(file);
 
             File.Copy(file, filePath);
 
