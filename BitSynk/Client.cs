@@ -367,44 +367,9 @@ namespace BitSynk {
                     }
 
                     foreach(string folder in Directory.GetDirectories(torrentsPath)) {
-                        //if(Torrents.Where(t => t.SavePath + "\\" + t.Torrent.Name == folder).Count() < 1) {
-                            //if(file.EndsWith(".torrent")) {
-                            //    try {
-                            //        // Load the .torrent from the file into a Torrent instance
-                            //        // You can use this to do preprocessing should you need to
-                            //        torrent = Torrent.Load(file);
-                            //        Console.WriteLine(torrent.InfoHash.ToString());
-                            //    } catch(Exception e) {
-                            //        Console.Write("Couldn't decode {0}: ", file);
-                            //        Console.WriteLine(e.Message);
-                            //        continue;
-                            //    }
-
-                            //    fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
-
-                            //    // When any preprocessing has been completed, you create a TorrentManager
-                            //    // which you then register with the engine.
-                            //    TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                            //    if(!Torrents.Contains(manager)) {
-                            //        torrent = manager.Torrent;
-                            //        if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                            //            manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                            //        //Engine.Register(manager);
-
-                            //        // Store the torrent manager in our list so we can access it later
-                            //        Torrents.Add(manager);
-                            //        manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
-                            //    }
-                            //} else {
-                                //if(!folders.Contains(folder)) {
-                                //    folders.Add(folder);
-                                //}
-                            //}
-                        //} else {
-                            if(!folders.Contains(folder)) {
-                                folders.Add(folder);
-                            }
-                        //}
+                        if(!folders.Contains(folder)) {
+                            folders.Add(folder);
+                        }
                     }
 
                     if(filesToDownload != null && filesToDownload.Count > 0) {
@@ -443,7 +408,9 @@ namespace BitSynk {
                     }
 
                     for(int i = 0; i < Torrents.Count; i++) {
-                        if(files.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() < 1) {
+                        bool hasFile = files.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() > 0;
+                        bool hasFolder = folders.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() > 0;
+                        if(!hasFile && !hasFolder) {
                             //await fileManager.RemoveFileByHashAsync(Torrents[i].InfoHash.Hash.ToString().Replace("-", ""), Settings.USER_ID);
                             //Torrents.RemoveAt(i);
                             if(bitSynkTorrents.Count > i) {
