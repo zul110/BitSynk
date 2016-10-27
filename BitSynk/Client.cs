@@ -116,6 +116,8 @@ namespace BitSynk {
         }
 
         public void StartEngine() {
+            Engine.DhtEngine.Start(initialNodes);
+
             timer.Start();
         }
 
@@ -179,12 +181,12 @@ namespace BitSynk {
             try {
                 BEncodedList details = new BEncodedList();
 
-                //initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetPublicIPAddress()), port));
+                initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetLocalIPAddress()), port));
             } catch {
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
 
-            Engine.DhtEngine.Start(initialNodes);
+            StartEngine();
         }
 
         public void AddNewTorrent(string filePath, bool isFolder) {
@@ -300,7 +302,7 @@ namespace BitSynk {
 
             bw.DoWork += async (s, ev) => {
                 try {
-                    timer.Stop();
+                    //timer.Stop();
 
                     // Remove files to be deleted
                     // Get files to download
@@ -325,7 +327,7 @@ namespace BitSynk {
                     
                     UpdateStats();
                 } catch(Exception ex) {
-                    timer.Start();
+                    //timer.Start();
                 }
             };
 
