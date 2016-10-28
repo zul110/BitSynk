@@ -168,6 +168,11 @@ namespace BitSynk {
 
             Engine = new ClientEngine(engineSettings);
             Engine.ChangeListenEndpoint(new IPEndPoint(IPAddress.Any, port));
+            Engine.TorrentRegistered += (sender, e) => {
+                if(!Engine.Torrents.Contains(e.TorrentManager)) {
+                    Engine.Torrents.Add(e.TorrentManager);
+                }
+            };
 
             InitDHT();
         }
@@ -223,7 +228,7 @@ namespace BitSynk {
 
                         if(fastResume.ContainsKey(torrent.InfoHash.ToHex())) {
                             manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-                            //Engine.Register(manager);
+                            Engine.Register(manager);
                         }
 
                         Torrents.Add(manager);
@@ -514,15 +519,19 @@ namespace BitSynk {
                     }
                 } else {
                     if(!Engine.Disposed) {
-                        if(manager.State == TorrentState.Stopped) {
-                            if(!Engine.Torrents.Contains(manager)) {
-                                Engine.Register(manager);
-                            }
+                        try {
+                            if(manager.State == TorrentState.Stopped) {
+                                if(!Engine.Torrents.Contains(manager)) {
+                                    Engine.Register(manager);
+                                }
 
-                            //if(manager.State != TorrentState.Stopped && manager.State != TorrentState.Paused) {
-                            // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
-                            manager.Start();
-                            //}
+                                //if(manager.State != TorrentState.Stopped && manager.State != TorrentState.Paused) {
+                                // Start the torrentmanager. The file will then hash (if required) and begin downloading/seeding
+                                manager.Start();
+                                //}
+                            }
+                        } catch(Exception ex) {
+
                         }
                     }
                 }
