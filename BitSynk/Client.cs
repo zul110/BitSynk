@@ -302,7 +302,7 @@ namespace BitSynk {
 
             bw.DoWork += async (s, ev) => {
                 try {
-                    //timer.Stop();
+                    timer.Stop();
 
                     // Remove files to be deleted
                     // Get files to download
@@ -324,10 +324,10 @@ namespace BitSynk {
                     await CheckForNewFiles(fileTrackerVM);
                     await CheckForNewFolders();
                     await RemoveNonExistantFiles(fileTrackerVM);
-                    
+
                     UpdateStats();
                 } catch(Exception ex) {
-                    //timer.Start();
+                    timer.Start();
                 }
             };
 
@@ -349,7 +349,7 @@ namespace BitSynk {
                 }
             }
 
-            await RemoveFilesFromQueue(fileTrackerVM);
+            //await RemoveFilesFromQueue(fileTrackerVM);
         }
 
         private async System.Threading.Tasks.Task DownloadFiles(FileManager fileManager) {
@@ -391,6 +391,9 @@ namespace BitSynk {
                         }
                     }
                 }
+                VerifyTorrents();
+
+                StartSyncing();
             }
         }
 
@@ -440,6 +443,10 @@ namespace BitSynk {
                         files.Add(file);
                     }
                 }
+
+                VerifyTorrents();
+
+                StartSyncing();
             }
         }
 
