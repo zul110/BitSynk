@@ -182,7 +182,7 @@ namespace BitSynk {
             try {
                 BEncodedList details = new BEncodedList();
 
-                initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetLocalIPAddress()), port));
+                initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetPublicIPAddress()), port));
             } catch {
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
@@ -194,6 +194,12 @@ namespace BitSynk {
             BackgroundWorker bw = new BackgroundWorker();
 
             bw.DoWork += async (s, ev) => {
+                FileManager fileManager = new FileManager();
+
+                if(await fileManager.IsRemovedFile(Settings.USER_ID, Path.GetFileName(filePath))) {
+                    await fileManager.RemoveFileFromRemoveQueueByNameAsync(Path.GetFileName(filePath), Settings.USER_ID);
+                }
+
                 string folder = Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(filePath);
                 string file = Settings.FILES_DIRECTORY + "\\" + Path.GetFileName(filePath);
                 bool fileOrFolderExists = isFolder ? Directory.Exists(folder) : File.Exists(file);
@@ -250,7 +256,7 @@ namespace BitSynk {
                     await DownloadFiles(fileManager);
                     await CheckForNewFiles(fileTrackerVM);
                     await CheckForNewFolders();
-                    await RemoveNonExistantFiles(fileTrackerVM);
+                    //await RemoveNonExistantFiles(fileTrackerVM);
 
                     VerifyTorrents();
                     StartSyncing();
@@ -367,10 +373,6 @@ namespace BitSynk {
                         files.Add(file);
                     }
                 }
-
-                VerifyTorrents();
-
-                StartSyncing();
             }
         }
 

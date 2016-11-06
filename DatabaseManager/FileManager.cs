@@ -609,5 +609,90 @@ namespace DatabaseManager
                 return result > 0 ? true : false;
             }
         }
+
+        public async Task<bool> IsRemovedFile(string _userId, string _fileName) {
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM FILES_TO_REMOVE WHERE USER_ID = @userId AND FILE_NAME = @fileName", connection);
+                selectCommand.Parameters.AddWithValue("@userId", _userId);
+                selectCommand.Parameters.AddWithValue("@fileName", _fileName);
+
+                using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
+                    List<File> files = new List<File>();
+
+                    while(reader.Read()) {
+                        string fileId = reader["FILE_ID"].ToString();
+                        string fileName = reader["FILE_NAME"].ToString();
+                        string fileHash = reader["FILE_HASH"].ToString();
+                        string userId = reader["USER_ID"].ToString();
+
+                        File file = new File();
+                        file.FileId = fileId;
+                        file.FileName = fileName;
+                        file.FileHash = fileHash;
+                        file.UserId = userId;
+                        //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
+
+                        files.Add(file);
+                    }
+
+                    return files.Count > 0;
+                }
+            }
+        }
+
+        public async Task<bool> RemoveFileFromRemoveQueueByNameAsync(string fileName, string userId) {
+            if(await FileNameExistsInRemoveQueueAsync(fileName, userId)) {
+                using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                    connection.Open();
+
+                    MySqlCommand deleteCommand = new MySqlCommand("DELETE FROM FILES_TO_REMOVE WHERE FILE_NAME = @fileName AND USER_ID = @userId", connection);
+                    deleteCommand.Parameters.AddWithValue("@fileName", fileName);
+                    deleteCommand.Parameters.AddWithValue("@userId", userId);
+
+                    int result = await deleteCommand.ExecuteNonQueryAsync();
+
+                    return result > 0 ? true : false;
+                }
+            }
+
+            return false;
+        }
+
+        private async Task<bool> FileNameExistsInRemoveQueueAsync(string fileName, string userId) {
+            return await GetUserFileFromRemoveQueueByNameAsync(fileName, userId) == null ? false : true;
+        }
+
+        public async Task<File> GetUserFileFromRemoveQueueByNameAsync(string _fileName, string _userId) {
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM FILES_TO_REMOVE WHERE FILE_NAME = @fileName AND USER_ID = @userId", connection);
+                selectCommand.Parameters.AddWithValue("@fileName", _fileName);
+                selectCommand.Parameters.AddWithValue("@userId", _userId);
+
+                using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
+                    File file = null;
+
+                    while(reader.Read()) {
+                        file = new File();
+
+                        string fileId = reader["FILE_ID"].ToString();
+                        string fileName = reader["FILE_NAME"].ToString();
+                        string fileHash = reader["FILE_HASH"].ToString();
+                        string userId = reader["USER_ID"].ToString();
+
+                        file.FileId = fileId;
+                        file.FileName = fileName;
+                        file.FileHash = fileHash;
+                        file.UserId = userId;
+                        //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
+                    }
+
+                    return file;
+                }
+            }
+        }
     }
 }
