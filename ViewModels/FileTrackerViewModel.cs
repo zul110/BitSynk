@@ -79,11 +79,11 @@ namespace ViewModels {
             }
         }
 
-        public void RemoveFile(Models.BitSynkTorrentModel bitSynkTorrentModel) {
-            DeleteFileLocally(bitSynkTorrentModel.Name);
-            DeleteTorrent(bitSynkTorrentModel.Name);
-            //AddFileToRemoveQueue(bitSynkTorrentModel);
-            DeleteFileFromDatabase(bitSynkTorrentModel);
+        public async Task RemoveFileAsync(Models.BitSynkTorrentModel bitSynkTorrentModel) {
+            await DeleteFileLocally(bitSynkTorrentModel.Name);
+            await DeleteTorrent(bitSynkTorrentModel.Name);
+            //await AddFileToRemoveQueue(bitSynkTorrentModel);
+            await DeleteFileFromDatabase(bitSynkTorrentModel);
         }
 
         //private async void AddFileToRemoveQueue(BitSynkTorrentModel bitSynkTorrentModel) {
@@ -97,15 +97,15 @@ namespace ViewModels {
         //    });
         //}
 
-        public async void DeleteFileFromDatabase(Models.BitSynkTorrentModel bitSynkTorrentModel) {
+        public async Task DeleteFileFromDatabase(Models.BitSynkTorrentModel bitSynkTorrentModel) {
             await new FileManager().RemoveFileByHashAsync(bitSynkTorrentModel.Hash, Settings.USER_ID);
         }
 
-        public void DeleteTorrent(string fileName) {
+        public async Task DeleteTorrent(string fileName) {
             File.Delete(Settings.FILES_DIRECTORY + "//" + Path.GetFileNameWithoutExtension(fileName) + ".torrent");
         }
 
-        public async void DeleteFileLocally(string fileName) {
+        public async Task DeleteFileLocally(string fileName) {
             string fileOrFolder = Settings.FILES_DIRECTORY + "\\" + fileName;
 
             if(File.Exists(fileOrFolder)) {
@@ -136,8 +136,8 @@ namespace ViewModels {
         public async Task<List<string>> DeleteFilesInQueue() {
             List<string> filesToDelete = new List<string>();
             foreach(Models.File file in await GetFilesToRemove(Settings.USER_ID)) {
-                DeleteFileLocally(file.FileName);
-                DeleteTorrent(file.FileName);
+                await DeleteFileLocally(file.FileName);
+                await DeleteTorrent(file.FileName);
 
                 filesToDelete.Add(file.FileHash);
             }

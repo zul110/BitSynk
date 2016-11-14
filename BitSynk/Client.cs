@@ -239,6 +239,8 @@ namespace BitSynk {
 
                     // Remove files to be deleted
                     // Get files to download
+                    // Check for modified files
+                    // Check for renamed files
                     // Check for new files
                     // Add new files to downloads/sync queue
                     // Check for new folders
@@ -254,6 +256,8 @@ namespace BitSynk {
 
                     await RemoveFilesFromQueue(fileTrackerVM);
                     await DownloadFiles(fileManager);
+                    await CheckForModifiedFiles();
+                    //await CheckForRenamedFiles();
                     await CheckForNewFiles(fileTrackerVM);
                     await CheckForNewFolders();
                     //await RemoveNonExistantFiles(fileTrackerVM);
@@ -274,6 +278,37 @@ namespace BitSynk {
             };
 
             bw.RunWorkerAsync();
+        }
+
+        private System.Threading.Tasks.Task CheckForRenamedFiles() {
+            throw new NotImplementedException();
+        }
+
+        private async System.Threading.Tasks.Task CheckForModifiedFiles() {
+            // For each file in the folder that exists in the Torrents list:
+            // If the NAMEs are same, but the HASHes are different, it's a modified file
+            // Update the database with the modified file's info
+
+            List<TorrentManager> modifiedFiles = new List<TorrentManager>();
+
+            foreach(string file in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
+                if(!file.Contains(".torrent")) {
+                    foreach(TorrentManager torrent in Torrents) {
+                        string name = Path.GetFileName(file);
+                        string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "");
+
+                        string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
+
+                        if((torrent.Torrent.Name == name) && (hash != newHash)) {
+                            modifiedFiles.Add(torrent);
+                            await new FileTrackerViewModel().RemoveFileAsync(new Models.BitSynkTorrentModel() {
+                                Name = name,
+                                Hash = hash
+                            });
+                        }
+                    }
+                }
+            }
         }
 
         private async System.Threading.Tasks.Task RemoveFilesFromQueue(FileTrackerViewModel fileTrackerVM) {
@@ -390,7 +425,7 @@ namespace BitSynk {
                 bool hasFolder = folders.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() > 0;
                 if(!hasFile && !hasFolder) {
                     if(bitSynkTorrents.Count > i) {
-                        fileTrackerVM.RemoveFile(bitSynkTorrents[i]);
+                        await fileTrackerVM.RemoveFileAsync(bitSynkTorrents[i]);
 
                         await Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
                             bitSynkTorrents.Remove(bitSynkTorrents.Where(t => t.Hash == bitSynkTorrents[i].Hash).FirstOrDefault());

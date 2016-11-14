@@ -88,10 +88,10 @@ namespace Helpers
             // processed in memory
             string torrentPath = savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
 
-            if(!File.Exists(torrentPath)) {
+            
                 c.Create(fileSource, torrentPath); // GetTorrentFilePath(savePath, path));
                 //FileTrackerViewModel.knownFiles.Add(savePath + "\\" + Path.GetFileName(path));
-            }
+            
 
             return torrentPath; // savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
 

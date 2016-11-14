@@ -177,8 +177,8 @@ namespace BitSynk.Pages {
             RemoveFile(torrentsDataGrid.SelectedItem as BitSynkTorrentModel);
         }
 
-        private void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
-            new FileTrackerViewModel().RemoveFile(bitSynkTorrentModel);
+        private async void RemoveFile(BitSynkTorrentModel bitSynkTorrentModel) {
+            await new FileTrackerViewModel().RemoveFileAsync(bitSynkTorrentModel);
 
             client.bitSynkTorrents.Remove(client.bitSynkTorrents.Where(t => t.Hash == bitSynkTorrentModel.Hash).FirstOrDefault());
             client.Torrents.Remove(client.Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == bitSynkTorrentModel.Hash).FirstOrDefault());
