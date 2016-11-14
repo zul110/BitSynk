@@ -334,8 +334,6 @@ namespace BitSynk {
                     string hash = t.Torrent.InfoHash.ToString().Replace("-", "");
 
                     if(t.Torrent.Name == file.FileName && (file.FileHash != hash)) {
-                        Torrents.Remove(t);
-
                         try {
                             // Load the .torrent from the file into a Torrent instance
                             // You can use this to do preprocessing should you need to
@@ -359,6 +357,8 @@ namespace BitSynk {
                             Torrents.Add(manager);
 
                             manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                        } else {
+                            Torrents[Torrents.IndexOf(t)] = manager;
                         }
                     }
                 }
