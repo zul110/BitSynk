@@ -225,7 +225,9 @@ namespace BitSynk {
             string fileCopy = isFolder ? await Utils.CopyFolder(filePath) : await Utils.CopyFile(filePath);
             string torrentFilePath = Utils.CreateTorrent(fileCopy, Settings.FILES_DIRECTORY);
 
-            new FileTrackerViewModel().AddFileToDatabase(Path.GetFileName(fileCopy), Utils.GetTorrentInfoHash(torrentFilePath), torrentFilePath);
+            if(!fileCopy.Contains(".torrent") && !fileCopy.Contains("fastresume")) {
+                await new FileTrackerViewModel().AddFileToDatabase(Path.GetFileName(fileCopy), Utils.GetTorrentInfoHash(torrentFilePath), torrentFilePath);
+            }
 
             return torrentFilePath;
         }
@@ -301,10 +303,8 @@ namespace BitSynk {
 
                         if((torrent.Torrent.Name == name) && (hash != newHash)) {
                             modifiedFiles.Add(torrent);
-                            await new FileTrackerViewModel().RemoveFileAsync(new Models.BitSynkTorrentModel() {
-                                Name = name,
-                                Hash = hash
-                            });
+
+                            await new FileTrackerViewModel().UpdateFileInDatabase(name, hash, torrent.Torrent.TorrentPath, newHash);
                         }
                     }
                 }
@@ -328,6 +328,41 @@ namespace BitSynk {
             BEncodedDictionary fastResume = GetFastResumeFile();
 
             List<Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
+
+            foreach(Models.File file in filesToDownload) {
+                foreach(TorrentManager t in Torrents) {
+                    string hash = t.Torrent.InfoHash.ToString().Replace("-", "");
+
+                    if(t.Torrent.Name == file.FileName && (file.FileHash != hash)) {
+                        Torrents.Remove(t);
+
+                        try {
+                            // Load the .torrent from the file into a Torrent instance
+                            // You can use this to do preprocessing should you need to
+                            torrent = Torrent.Load(t.Torrent.TorrentPath);
+                            Console.WriteLine(torrent.InfoHash.ToString());
+                        } catch(Exception e) {
+                            Console.Write("Couldn't decode {0}: ", file);
+                            Console.WriteLine(e.Message);
+                            continue;
+                        }
+
+                        // When any preprocessing has been completed, you create a TorrentManager
+                        // which you then register with the engine.
+                        TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
+                        if(!Torrents.Contains(manager)) {
+                            torrent = manager.Torrent;
+
+                            if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
+                                manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
+
+                            Torrents.Add(manager);
+
+                            manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
+                        }
+                    }
+                }
+            }
 
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
@@ -372,7 +407,7 @@ namespace BitSynk {
             // For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach(string file in Directory.GetFiles(torrentsPath)) {
                 if(Torrents.Where(t => t.SavePath + "\\" + t.Torrent.Name == file).Count() < 1) {
-                    if(file.EndsWith(".torrent")) {
+                    if(file.EndsWith(".torrent") && !file.Contains("fastresume")) {
                         try {
                             // Load the .torrent from the file into a Torrent instance
                             // You can use this to do preprocessing should you need to
@@ -384,7 +419,7 @@ namespace BitSynk {
                             continue;
                         }
 
-                        fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
+                        await fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
 
                         // When any preprocessing has been completed, you create a TorrentManager
                         // which you then register with the engine.

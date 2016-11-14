@@ -65,7 +65,7 @@ namespace ViewModels {
             return knownFiles;
         }
 
-        public async void AddFileToDatabase(string file, string hash, string torrentPath) {
+        public async Task AddFileToDatabase(string file, string hash, string torrentPath) {
             try {
                 FileManager fileManager = new FileManager();
 
@@ -73,6 +73,22 @@ namespace ViewModels {
                     await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath));
 
                     knownFiles.Add(hash);
+                }
+            } catch(Exception ex) {
+                throw ex;
+            }
+        }
+
+        public async Task UpdateFileInDatabase(string file, string hash, string torrentPath, string newFileHash) {
+            try {
+                FileManager fileManager = new FileManager();
+
+                if((await fileManager.GetFileByHashAsync(hash) != null)) {
+                    await fileManager.UpdateFile(Path.GetFileName(file), hash, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), newFileHash);
+
+                    if(knownFiles != null && knownFiles.Count > 0) {
+                        knownFiles[knownFiles.IndexOf(knownFiles.Where(f => f == hash).FirstOrDefault())] = newFileHash;
+                    }
                 }
             } catch(Exception ex) {
                 throw ex;

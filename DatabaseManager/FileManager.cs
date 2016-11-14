@@ -694,5 +694,20 @@ namespace DatabaseManager
                 }
             }
         }
+
+        public async Task<bool> UpdateFile(string fileName, string fileHash, string userId, string deviceId, byte[] fileContents, string newFileHash) {
+            using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
+                connection.Open();
+
+                MySqlCommand updateCommand = new MySqlCommand("UPDATE FILES SET FILE_HASH = @newFileHash WHERE FILE_HASH = @fileHash AND USER_ID = @userId", connection);
+                updateCommand.Parameters.AddWithValue("@fileHash", fileHash);
+                updateCommand.Parameters.AddWithValue("@userId", userId);
+                updateCommand.Parameters.AddWithValue("@newFileHash", newFileHash);
+
+                int result = await updateCommand.ExecuteNonQueryAsync();
+
+                return result > 0 ? true : false;
+            }
+        }
     }
 }
