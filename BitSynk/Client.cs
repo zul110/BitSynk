@@ -297,12 +297,16 @@ namespace BitSynk {
                 if(!file.Contains(".torrent")) {
                     foreach(TorrentManager torrent in Torrents) {
                         string name = Path.GetFileName(file);
+
+                        long size = torrent.Torrent.Size;
                         string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "");
 
-                        string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
+                        long newSize = new FileInfo(file).Length;
 
-                        if((torrent.Torrent.Name == name) && (hash != newHash)) {
+                        if((torrent.Torrent.Name == name) && (size != newSize)) {
                             modifiedFiles.Add(torrent);
+
+                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
 
                             await new FileTrackerViewModel().UpdateFileInDatabase(name, hash, torrent.Torrent.TorrentPath, newHash);
                         }
@@ -319,19 +323,20 @@ namespace BitSynk {
                     Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == fileToDelete).FirstOrDefault());
                 }
             }
-
-            //await RemoveFilesFromQueue(fileTrackerVM);
         }
 
         private async System.Threading.Tasks.Task DownloadFiles(FileManager fileManager) {
             Torrent torrent = null;
             BEncodedDictionary fastResume = GetFastResumeFile();
 
+            string torrentFilePath = "";
+
             List<Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
             foreach(Models.File file in filesToDownload) {
                 foreach(TorrentManager t in Torrents) {
                     string hash = t.Torrent.InfoHash.ToString().Replace("-", "");
+                    torrentFilePath = await Utils.CreateFile(file);
 
                     if(t.Torrent.Name == file.FileName && (file.FileHash != hash)) {
                         try {
@@ -367,7 +372,7 @@ namespace BitSynk {
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
                     if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
-                        string torrentFilePath = await Utils.CreateFile(file);
+                        torrentFilePath = await Utils.CreateFile(file);
 
                         try {
                             // Load the .torrent from the file into a Torrent instance

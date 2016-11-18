@@ -9,6 +9,7 @@ namespace Models {
         string fileId;
         string fileName;
         string fileHash;
+        long fileSize;
         string userId;
         string deviceId;
         byte[] fileContents;
@@ -30,7 +31,13 @@ namespace Models {
             get { return fileHash; }
             set { fileHash = value; }
         }
-        
+
+        public long FileSize
+        {
+            get { return fileSize; }
+            set { fileSize = value; }
+        }
+
         public string UserId
         {
             get { return userId; }

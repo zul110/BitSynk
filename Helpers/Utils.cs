@@ -43,7 +43,7 @@ namespace Helpers
 
         public static string GetTorrentInfoHash(string torrentPath) {
             BencodeNET.Objects.TorrentFile torrent = Bencode.DecodeTorrentFile(torrentPath);
-
+            
             return torrent.CalculateInfoHash();
         }
 
@@ -96,6 +96,28 @@ namespace Helpers
             return torrentPath; // savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
 
             //AnnounceFileAddition(Path.GetFileName(path), fileHash);
+        }
+
+        public static MonoTorrent.BEncoding.BEncodedDictionary GetTorrent(string path, string savePath) {
+            TorrentCreator c = new TorrentCreator();
+
+            RawTrackerTier tier = new RawTrackerTier();
+
+            c.Comment = "BitSynk";
+            c.CreatedBy = "Zul";
+            c.Publisher = "zul";
+            c.Private = false;
+            c.Hashed += delegate (object o, TorrentCreatorEventArgs e) {
+                Console.WriteLine("Current File is {0}% hashed", e.FileCompletion);
+                Console.WriteLine("Overall {0}% hashed", e.OverallCompletion);
+                Console.WriteLine("Total data to hash: {0}", e.OverallSize);
+            };
+            
+            ITorrentFileSource fileSource = new TorrentFileSource(path);
+            
+            string torrentPath = savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
+            
+            return c.Create(fileSource);
         }
 
         public static string GetTorrentFilePath(string savePath, string path) {
