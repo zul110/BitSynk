@@ -10,6 +10,8 @@ namespace Models {
         string fileName;
         string fileHash;
         long fileSize;
+        DateTime added;
+        DateTime lastModified;
         string userId;
         string deviceId;
         byte[] fileContents;
@@ -36,6 +38,18 @@ namespace Models {
         {
             get { return fileSize; }
             set { fileSize = value; }
+        }
+
+        public DateTime Added
+        {
+            get { return added; }
+            set { added = value; }
+        }
+
+        public DateTime LastModified
+        {
+            get { return lastModified; }
+            set { lastModified = value; }
         }
 
         public string UserId

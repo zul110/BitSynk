@@ -44,6 +44,7 @@ namespace BitSynk {
 
         List<string> files = new List<string>();
         List<string> folders = new List<string>();
+        List<Models.File> filesToDownload;
 
         public ObservableCollection<Models.BitSynkTorrentModel> bitSynkTorrents = new ObservableCollection<Models.BitSynkTorrentModel>();
         List<IPEndPoint> initialNodes = new List<IPEndPoint>();
@@ -295,20 +296,20 @@ namespace BitSynk {
 
             foreach(string file in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
                 if(!file.Contains(".torrent")) {
-                    foreach(TorrentManager torrent in Torrents) {
-                        string name = Path.GetFileName(file);
+                    foreach(Models.File f in filesToDownload) {
+                        string name = f.FileName;
+                        DateTime lastModified = f.LastModified; //new FileInfo(file).LastWriteTimeUtc;
+                        
+                        DateTime newLastModified = new FileInfo(file).LastWriteTimeUtc;
 
-                        long size = torrent.Torrent.Size;
-                        string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "");
+                        bool lastModifiedChanged = lastModified.ToShortDateString() != newLastModified.ToShortDateString() || lastModified.ToShortTimeString() != newLastModified.ToShortTimeString();
 
-                        long newSize = new FileInfo(file).Length;
-
-                        if((torrent.Torrent.Name == name) && (size != newSize)) {
-                            modifiedFiles.Add(torrent);
-
+                        if((name == Path.GetFileName(file)) && lastModifiedChanged) {
+                            TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == name).FirstOrDefault();
+                            string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
                             string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
 
-                            await new FileTrackerViewModel().UpdateFileInDatabase(name, hash, torrent.Torrent.TorrentPath, newHash);
+                            await new FileTrackerViewModel().UpdateFileInDatabase(f.FileId, file, hash, torrent.Torrent.TorrentPath, newHash);
                         }
                     }
                 }
@@ -331,43 +332,7 @@ namespace BitSynk {
 
             string torrentFilePath = "";
 
-            List<Models.File> filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
-
-            foreach(Models.File file in filesToDownload) {
-                foreach(TorrentManager t in Torrents) {
-                    string hash = t.Torrent.InfoHash.ToString().Replace("-", "");
-                    torrentFilePath = await Utils.CreateFile(file);
-
-                    if(t.Torrent.Name == file.FileName && (file.FileHash != hash)) {
-                        try {
-                            // Load the .torrent from the file into a Torrent instance
-                            // You can use this to do preprocessing should you need to
-                            torrent = Torrent.Load(t.Torrent.TorrentPath);
-                            Console.WriteLine(torrent.InfoHash.ToString());
-                        } catch(Exception e) {
-                            Console.Write("Couldn't decode {0}: ", file);
-                            Console.WriteLine(e.Message);
-                            continue;
-                        }
-
-                        // When any preprocessing has been completed, you create a TorrentManager
-                        // which you then register with the engine.
-                        TorrentManager manager = new TorrentManager(torrent, downloadsPath, torrentDefaults);
-                        if(!Torrents.Contains(manager)) {
-                            torrent = manager.Torrent;
-
-                            if(fastResume.ContainsKey(torrent.InfoHash.ToHex()))
-                                manager.LoadFastResume(new FastResume((BEncodedDictionary)fastResume[torrent.infoHash.ToHex()]));
-
-                            Torrents.Add(manager);
-
-                            manager.PeersFound += new EventHandler<PeersAddedEventArgs>(manager_PeersFound);
-                        } else {
-                            Torrents[Torrents.IndexOf(t)] = manager;
-                        }
-                    }
-                }
-            }
+            filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
@@ -411,7 +376,7 @@ namespace BitSynk {
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach(string file in Directory.GetFiles(torrentsPath)) {
-                if(Torrents.Where(t => t.SavePath + "\\" + t.Torrent.Name == file).Count() < 1) {
+                if(Torrents.Where(t => t.Torrent.TorrentPath == file).Count() < 1) {
                     if(file.EndsWith(".torrent") && !file.Contains("fastresume")) {
                         try {
                             // Load the .torrent from the file into a Torrent instance

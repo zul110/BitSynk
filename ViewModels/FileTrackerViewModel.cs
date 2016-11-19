@@ -69,8 +69,13 @@ namespace ViewModels {
             try {
                 FileManager fileManager = new FileManager();
 
+                FileInfo fileInfo = new FileInfo(file);
+                long fileSize = fileInfo.Length;
+                DateTime added = fileInfo.CreationTimeUtc;
+                DateTime lastModified = fileInfo.LastWriteTimeUtc;
+
                 if(!(await fileManager.GetFileByHashAsync(hash) != null)) {
-                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath));
+                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, fileSize, added, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath));
 
                     knownFiles.Add(hash);
                 }
@@ -79,12 +84,16 @@ namespace ViewModels {
             }
         }
 
-        public async Task UpdateFileInDatabase(string file, string hash, string torrentPath, string newFileHash) {
+        public async Task UpdateFileInDatabase(string fileId, string file, string hash, string torrentPath, string newFileHash) {
             try {
                 FileManager fileManager = new FileManager();
 
+                FileInfo fileInfo = new FileInfo(file);
+                long fileSize = fileInfo.Length;
+                DateTime lastModified = fileInfo.LastWriteTimeUtc;
+
                 if((await fileManager.GetFileByHashAsync(hash) != null)) {
-                    await fileManager.UpdateFile(Path.GetFileName(file), hash, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), newFileHash);
+                    await fileManager.UpdateFile(fileId, Path.GetFileName(file), hash, fileSize, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), newFileHash);
 
                     if(knownFiles != null && knownFiles.Count > 0) {
                         knownFiles[knownFiles.IndexOf(knownFiles.Where(f => f == hash).FirstOrDefault())] = newFileHash;

@@ -151,7 +151,13 @@ namespace StorageManager {
 
         public async void AnnounceFileAddition(string fileName, string fileHash, byte[] fileContents) {
             FileManager fileService = new FileManager();
-            await fileService.AddFileAsync(Guid.NewGuid().ToString(), fileName, fileHash, USER_ID, DEVICE_ID, fileContents);
+
+            FileInfo fileInfo = new FileInfo(fileName);
+            long fileSize = fileInfo.Length;
+            DateTime added = fileInfo.CreationTimeUtc;
+            DateTime lastModified = fileInfo.LastWriteTimeUtc;
+
+            await fileService.AddFileAsync(Guid.NewGuid().ToString(), fileName, fileHash, fileSize, added, lastModified, USER_ID, DEVICE_ID, fileContents);
         }
 
         public void DownloadTorrent(string path, ClientEngine engine) {
