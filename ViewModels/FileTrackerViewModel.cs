@@ -42,7 +42,7 @@ namespace ViewModels {
 
                         if(!knownFiles.Contains(hash)) {
                             if(!(await (new FileManager().FileHashExistsAsync(hash)))) {
-                                AddFileToDatabase(file, hash, torrentPath);
+                                await AddFileToDatabase(file, hash, torrentPath);
                             }
                         }
                     }
@@ -56,7 +56,7 @@ namespace ViewModels {
 
                     if(!knownFiles.Contains(hash)) {
                         if(!(await (new FileManager().FileHashExistsAsync(hash)))) {
-                            AddFileToDatabase(directory, hash, torrentPath);
+                            await AddFileToDatabase(directory, hash, torrentPath);
                         }
                     }
                 }

@@ -295,7 +295,7 @@ namespace BitSynk {
             List<TorrentManager> modifiedFiles = new List<TorrentManager>();
 
             foreach(string file in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
-                if(!file.Contains(".torrent")) {
+                if(!file.Contains(".torrent") && !file.Contains("fastresume")) {
                     foreach(Models.File f in filesToDownload) {
                         string name = f.FileName;
                         DateTime lastModified = f.LastModified; //new FileInfo(file).LastWriteTimeUtc;
@@ -311,6 +311,46 @@ namespace BitSynk {
 
                             await new FileTrackerViewModel().UpdateFileInDatabase(f.FileId, file, hash, torrent.Torrent.TorrentPath, newHash);
                         }
+                    }
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task DownloadUpdatedFiles() {
+            List<TorrentManager> modifiedFiles = new List<TorrentManager>();
+
+            Torrent torrent = null;
+            BEncodedDictionary fastResume = GetFastResumeFile();
+
+            string torrentFilePath = "";
+
+            foreach(string file in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
+                if(!file.Contains(".torrent") && !file.Contains("fastresume")) {
+                    foreach(Models.File f in filesToDownload) {
+                        string name = f.FileName;
+                        DateTime lastModified = f.LastModified; //new FileInfo(file).LastWriteTimeUtc;
+
+                        DateTime newLastModified = new FileInfo(file).LastWriteTimeUtc;
+
+                        bool lastModifiedChanged = lastModified.ToShortDateString() != newLastModified.ToShortDateString() || lastModified.ToShortTimeString() != newLastModified.ToShortTimeString();
+
+                        if((name == Path.GetFileName(file)) && lastModifiedChanged) {
+                            var fileTrackerVM = new FileTrackerViewModel();
+                            await fileTrackerVM.DeleteFileLocally(name);
+                            await fileTrackerVM.DeleteTorrent(name);
+
+                            Torrents.RemoveAt(Torrents.IndexOf(Torrents.Where(t => t.Torrent.Name == name).FirstOrDefault()));
+
+                            //torrentFilePath = await Utils.CreateFile(f);
+                        }
+                    }
+                }
+            }
+
+            if(filesToDownload != null && filesToDownload.Count > 0) {
+                foreach(var file in filesToDownload) {
+                    if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
+                        
                     }
                 }
             }
@@ -334,11 +374,13 @@ namespace BitSynk {
 
             filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
+            await DownloadUpdatedFiles();
+
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
                     if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
                         torrentFilePath = await Utils.CreateFile(file);
-
+                        
                         try {
                             // Load the .torrent from the file into a Torrent instance
                             // You can use this to do preprocessing should you need to
