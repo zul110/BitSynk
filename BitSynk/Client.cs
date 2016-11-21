@@ -207,7 +207,7 @@ namespace BitSynk {
 
                 if(!fileOrFolderExists) {
                     BEncodedDictionary fastResume = GetFastResumeFile();
-                    string torrentFilePath = await CopyFileOrFolderToFilesDirectory(isFolder, filePath);
+                    await CopyFileOrFolderToFilesDirectory(isFolder, filePath);
                 } else {
                     MessageBox.Show("Task already exists!");
                 }
@@ -340,6 +340,8 @@ namespace BitSynk {
                             await fileTrackerVM.DeleteTorrent(name);
 
                             Torrents.RemoveAt(Torrents.IndexOf(Torrents.Where(t => t.Torrent.Name == name).FirstOrDefault()));
+
+                            filesToDownload.Add(f);
 
                             //torrentFilePath = await Utils.CreateFile(f);
                         }

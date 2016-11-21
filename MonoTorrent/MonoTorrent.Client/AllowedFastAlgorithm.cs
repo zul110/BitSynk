@@ -77,6 +77,10 @@ namespace MonoTorrent.Client
                 {
                     UInt32 result = (UInt32)IPAddress.HostToNetworkOrder(BitConverter.ToInt32(hashBuffer, i));
 
+                    if(numberOfPieces < 1) {
+                        return new MonoTorrentCollection<int>(0);
+                    }
+
                     result = result % numberOfPieces;
                     if (result > int.MaxValue)
                         return results;

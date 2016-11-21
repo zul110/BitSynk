@@ -67,6 +67,10 @@ namespace ViewModels {
 
         public async Task AddFileToDatabase(string file, string hash, string torrentPath) {
             try {
+                if(!file.Contains(Settings.FILES_DIRECTORY)) {
+                    file = Settings.FILES_DIRECTORY + "\\" + file;
+                }
+
                 FileManager fileManager = new FileManager();
 
                 FileInfo fileInfo = new FileInfo(file);
