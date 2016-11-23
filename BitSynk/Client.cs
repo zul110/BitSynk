@@ -226,9 +226,9 @@ namespace BitSynk {
             string fileCopy = isFolder ? await Utils.CopyFolder(filePath) : await Utils.CopyFile(filePath);
             string torrentFilePath = Utils.CreateTorrent(fileCopy, Settings.FILES_DIRECTORY);
 
-            if(!fileCopy.Contains(".torrent") && !fileCopy.Contains("fastresume")) {
-                await new FileTrackerViewModel().AddFileToDatabase(Path.GetFileName(fileCopy), Utils.GetTorrentInfoHash(torrentFilePath), torrentFilePath);
-            }
+            //if(!fileCopy.Contains(".torrent") && !fileCopy.Contains("fastresume")) {
+                //await new FileTrackerViewModel().AddFileToDatabase(Path.GetFileName(fileCopy), Utils.GetTorrentInfoHash(torrentFilePath), torrentFilePath);
+            //}
 
             return torrentFilePath;
         }
@@ -257,12 +257,12 @@ namespace BitSynk {
                     files = new List<string>();
                     folders = new List<string>();
 
-                    await RemoveFilesFromQueue(fileTrackerVM);
-                    await DownloadFiles(fileManager);
-                    await CheckForModifiedFiles();
+                    await RemoveFilesFromQueue(fileManager, fileTrackerVM);
+                    
+                    
                     //await CheckForRenamedFiles();
-                    await CheckForNewFiles(fileTrackerVM);
-                    await CheckForNewFolders();
+                    
+                    //await CheckForNewFolders();
                     //await RemoveNonExistantFiles(fileTrackerVM);
 
                     VerifyTorrents();
@@ -287,7 +287,7 @@ namespace BitSynk {
             throw new NotImplementedException();
         }
 
-        private async System.Threading.Tasks.Task CheckForModifiedFiles() {
+        private async System.Threading.Tasks.Task CheckForModifiedFiles(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
             // For each file in the folder that exists in the Torrents list:
             // If the NAMEs are same, but the HASHes are different, it's a modified file
             // Update the database with the modified file's info
@@ -302,7 +302,7 @@ namespace BitSynk {
                         
                         DateTime newLastModified = new FileInfo(file).LastWriteTimeUtc;
 
-                        bool lastModifiedChanged = lastModified.ToShortDateString() != newLastModified.ToShortDateString() || lastModified.ToShortTimeString() != newLastModified.ToShortTimeString();
+                        bool lastModifiedChanged = DateTime.Parse(newLastModified.ToShortDateString()) > DateTime.Parse(lastModified.ToShortDateString()) || DateTime.Parse(lastModified.ToShortTimeString()) != DateTime.Parse(newLastModified.ToShortTimeString());
 
                         if((name == Path.GetFileName(file)) && lastModifiedChanged) {
                             TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == name).FirstOrDefault();
@@ -310,10 +310,14 @@ namespace BitSynk {
                             string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
 
                             await new FileTrackerViewModel().UpdateFileInDatabase(f.FileId, file, hash, torrent.Torrent.TorrentPath, newHash);
+
+                            Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
                         }
                     }
                 }
             }
+
+            await CheckForNewFiles(fileManager, fileTrackerVM);
         }
 
         private async System.Threading.Tasks.Task DownloadUpdatedFiles() {
@@ -358,7 +362,7 @@ namespace BitSynk {
             }
         }
 
-        private async System.Threading.Tasks.Task RemoveFilesFromQueue(FileTrackerViewModel fileTrackerVM) {
+        private async System.Threading.Tasks.Task RemoveFilesFromQueue(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
             List<string> filesToDelete = await fileTrackerVM.DeleteFilesInQueue();
 
             if(filesToDelete.Count > 0) {
@@ -366,9 +370,11 @@ namespace BitSynk {
                     Torrents.Remove(Torrents.Where(t => t.InfoHash.ToString().Replace("-", "") == fileToDelete).FirstOrDefault());
                 }
             }
+
+            await DownloadFiles(fileManager, fileTrackerVM);
         }
 
-        private async System.Threading.Tasks.Task DownloadFiles(FileManager fileManager) {
+        private async System.Threading.Tasks.Task DownloadFiles(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
             Torrent torrent = null;
             BEncodedDictionary fastResume = GetFastResumeFile();
 
@@ -376,7 +382,7 @@ namespace BitSynk {
 
             filesToDownload = await fileManager.GetAllFilesWithUserAsync(Settings.USER_ID);
 
-            await DownloadUpdatedFiles();
+            //await DownloadUpdatedFiles();
 
             if(filesToDownload != null && filesToDownload.Count > 0) {
                 foreach(var file in filesToDownload) {
@@ -410,13 +416,15 @@ namespace BitSynk {
                     }
                 }
             }
+
+            await CheckForModifiedFiles(fileManager, fileTrackerVM);
         }
 
-        private async System.Threading.Tasks.Task CheckForNewFiles(FileTrackerViewModel fileTrackerVM) {
+        private async System.Threading.Tasks.Task CheckForNewFiles(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
             Torrent torrent = null;
             BEncodedDictionary fastResume = GetFastResumeFile();
 
-            await fileTrackerVM.CheckForNewFiles();
+            //await fileTrackerVM.CheckForNewFiles();
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach(string file in Directory.GetFiles(torrentsPath)) {
@@ -433,7 +441,7 @@ namespace BitSynk {
                             continue;
                         }
 
-                        await fileTrackerVM.AddFileToDatabase(file, Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
+                        await fileTrackerVM.AddFileToDatabase(Directory.GetFiles(Settings.FILES_DIRECTORY, Path.GetFileNameWithoutExtension(file) + ".*").ToList().Where(f => !f.EndsWith(".torrent")).FirstOrDefault(), Utils.GetTorrentInfoHash(file), file);// torrent.InfoHash.ToString());
 
                         // When any preprocessing has been completed, you create a TorrentManager
                         // which you then register with the engine.

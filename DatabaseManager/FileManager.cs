@@ -462,12 +462,24 @@ namespace DatabaseManager
                 string fileId = reader["FILE_ID"].ToString();
                 string fileName = reader["FILE_NAME"].ToString();
                 string fileHash = reader["FILE_HASH"].ToString();
-                long fileSize = long.Parse(reader["FILE_SIZE"].ToString());
-                DateTime added = DateTime.Parse(reader["ADDED"].ToString());
-                DateTime lastModified = DateTime.Parse(reader["LAST_MODIFIED"].ToString());
                 string userId = reader["USER_ID"].ToString();
-                string deviceId = reader["DEVICE_ID"].ToString();
-                byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
+                string deviceId = "";
+
+                byte[] fileContents = null;
+
+                long fileSize = 0;
+
+                DateTime added = DateTime.MinValue;
+                DateTime lastModified = DateTime.MinValue;
+                try {
+                    fileSize = long.Parse(reader["FILE_SIZE"].ToString());
+                    added = DateTime.Parse(reader["ADDED"].ToString());
+                    lastModified = DateTime.Parse(reader["LAST_MODIFIED"].ToString());
+                    deviceId = reader["DEVICE_ID"].ToString();
+                    fileContents = (byte[])reader["FILE_CONTENTS"];
+                } catch(Exception ex) {
+
+                }
 
                 file.FileId = fileId;
                 file.FileName = fileName;
@@ -491,12 +503,24 @@ namespace DatabaseManager
                 string fileId = reader["FILE_ID"].ToString();
                 string fileName = reader["FILE_NAME"].ToString();
                 string fileHash = reader["FILE_HASH"].ToString();
-                long fileSize = long.Parse(reader["FILE_SIZE"].ToString());
-                DateTime added = DateTime.Parse(reader["ADDED"].ToString());
-                DateTime lastModified = DateTime.Parse(reader["LAST_MODIFIED"].ToString());
                 string userId = reader["USER_ID"].ToString();
-                string deviceId = reader["DEVICE_ID"].ToString();
-                byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
+                string deviceId = "";
+
+                byte[] fileContents = null;
+
+                long fileSize = 0;
+
+                DateTime added = DateTime.MinValue;
+                DateTime lastModified = DateTime.MinValue;
+                try {
+                    fileSize = long.Parse(reader["FILE_SIZE"].ToString());
+                    added = DateTime.Parse(reader["ADDED"].ToString());
+                    lastModified = DateTime.Parse(reader["LAST_MODIFIED"].ToString());
+                    deviceId = reader["DEVICE_ID"].ToString();
+                    fileContents = (byte[])reader["FILE_CONTENTS"];
+                } catch(Exception ex) {
+
+                }
 
                 File file = new File();
                 file.FileId = fileId;

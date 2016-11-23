@@ -42,7 +42,7 @@ namespace ViewModels {
 
                         if(!knownFiles.Contains(hash)) {
                             if(!(await (new FileManager().FileHashExistsAsync(hash)))) {
-                                await AddFileToDatabase(file, hash, torrentPath);
+                                await AddFileToDatabase(file, hash, torrentPath); // SOMETIMES THE APP SEES A MODIFIED FILE AS A NEW FILE. FIX IT.
                             }
                         }
                     }
@@ -96,7 +96,7 @@ namespace ViewModels {
                 long fileSize = fileInfo.Length;
                 DateTime lastModified = fileInfo.LastWriteTimeUtc;
 
-                if((await fileManager.GetFileByHashAsync(hash) != null)) {
+                if((await fileManager.GetFileByIdAsync(fileId) != null)) {
                     await fileManager.UpdateFile(fileId, Path.GetFileName(file), hash, fileSize, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), newFileHash);
 
                     if(knownFiles != null && knownFiles.Count > 0) {
