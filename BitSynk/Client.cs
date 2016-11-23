@@ -297,30 +297,42 @@ namespace BitSynk {
             foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
                 if(!localFile.Contains(".torrent") && !localFile.Contains("fastresume")) {
                     foreach(Models.File fileToDownload in filesToDownload) {
+                        FileInfo localFileInfo = new FileInfo(localFile);
+
                         string fileToDownloadName = fileToDownload.FileName;
                         string localFileName = Path.GetFileName(localFile);
 
                         DateTime fileToDownloadLastModified = fileToDownload.LastModified;
-                        DateTime localLastModified = new FileInfo(localFile).LastWriteTimeUtc;
+                        DateTime localLastModified = localFileInfo.LastWriteTimeUtc;
 
                         DateTime fileToDownloadCreated = fileToDownload.Added;
-                        DateTime localCreated = new FileInfo(localFile).CreationTimeUtc;
+                        DateTime localCreated = localFileInfo.CreationTimeUtc;
 
                         bool lastModifiedChanged =
                             (
-                            localCreated.ToShortDateString() + "_" + localCreated.ToShortTimeString()
-                            !=
-                            localLastModified.ToShortDateString() + "_" + localLastModified.ToShortTimeString()
+                                localCreated.ToShortDateString() + "_" + localCreated.ToShortTimeString()
+                                !=
+                                localLastModified.ToShortDateString() + "_" + localLastModified.ToShortTimeString()
                             ) 
                             && 
                             (
-                            DateTime.Parse(localLastModified.ToShortDateString()) 
-                            > 
-                            DateTime.Parse(fileToDownloadLastModified.ToShortDateString())
-                            ||
-                            DateTime.Parse(fileToDownloadLastModified.ToShortTimeString()) 
-                            != 
-                            DateTime.Parse(localLastModified.ToShortTimeString())
+                                DateTime.Parse(localLastModified.ToShortDateString()) 
+                                >
+                                DateTime.Parse(fileToDownloadLastModified.ToShortDateString())
+                                ||
+                                (
+                                    (
+                                        DateTime.Parse(localLastModified.ToShortDateString())
+                                        >
+                                        DateTime.Parse(fileToDownloadLastModified.ToShortDateString())
+                                    )
+                                    &&
+                                    (
+                                        DateTime.Parse(fileToDownloadLastModified.ToShortTimeString()) 
+                                        != 
+                                        DateTime.Parse(localLastModified.ToShortTimeString())
+                                    )
+                                )
                             );
 
                         if((fileToDownloadName == localFileName) && lastModifiedChanged) {
