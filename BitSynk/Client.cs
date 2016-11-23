@@ -294,22 +294,41 @@ namespace BitSynk {
 
             List<TorrentManager> modifiedFiles = new List<TorrentManager>();
 
-            foreach(string file in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
-                if(!file.Contains(".torrent") && !file.Contains("fastresume")) {
-                    foreach(Models.File f in filesToDownload) {
-                        string name = f.FileName;
-                        DateTime lastModified = f.LastModified; //new FileInfo(file).LastWriteTimeUtc;
-                        
-                        DateTime newLastModified = new FileInfo(file).LastWriteTimeUtc;
+            foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
+                if(!localFile.Contains(".torrent") && !localFile.Contains("fastresume")) {
+                    foreach(Models.File fileToDownload in filesToDownload) {
+                        string fileToDownloadName = fileToDownload.FileName;
+                        string localFileName = Path.GetFileName(localFile);
 
-                        bool lastModifiedChanged = DateTime.Parse(newLastModified.ToShortDateString()) > DateTime.Parse(lastModified.ToShortDateString()) || DateTime.Parse(lastModified.ToShortTimeString()) != DateTime.Parse(newLastModified.ToShortTimeString());
+                        DateTime fileToDownloadLastModified = fileToDownload.LastModified;
+                        DateTime localLastModified = new FileInfo(localFile).LastWriteTimeUtc;
 
-                        if((name == Path.GetFileName(file)) && lastModifiedChanged) {
-                            TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == name).FirstOrDefault();
+                        DateTime fileToDownloadCreated = fileToDownload.Added;
+                        DateTime localCreated = new FileInfo(localFile).CreationTimeUtc;
+
+                        bool lastModifiedChanged =
+                            (
+                            localCreated.ToShortDateString() + "_" + localCreated.ToShortTimeString()
+                            !=
+                            localLastModified.ToShortDateString() + "_" + localLastModified.ToShortTimeString()
+                            ) 
+                            && 
+                            (
+                            DateTime.Parse(localLastModified.ToShortDateString()) 
+                            > 
+                            DateTime.Parse(fileToDownloadLastModified.ToShortDateString())
+                            ||
+                            DateTime.Parse(fileToDownloadLastModified.ToShortTimeString()) 
+                            != 
+                            DateTime.Parse(localLastModified.ToShortTimeString())
+                            );
+
+                        if((fileToDownloadName == localFileName) && lastModifiedChanged) {
+                            TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault();
                             string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
-                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(file, Settings.FILES_DIRECTORY));
+                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
 
-                            await new FileTrackerViewModel().UpdateFileInDatabase(f.FileId, file, hash, torrent.Torrent.TorrentPath, newHash);
+                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, torrent.Torrent.TorrentPath, newHash);
 
                             Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
                         }
@@ -328,24 +347,25 @@ namespace BitSynk {
 
             string torrentFilePath = "";
 
-            foreach(string file in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
-                if(!file.Contains(".torrent") && !file.Contains("fastresume")) {
-                    foreach(Models.File f in filesToDownload) {
-                        string name = f.FileName;
-                        DateTime lastModified = f.LastModified; //new FileInfo(file).LastWriteTimeUtc;
+            foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
+                if(!localFile.Contains(".torrent") && !localFile.Contains("fastresume")) {
+                    foreach(Models.File fileToDownload in filesToDownload) {
+                        string fileToDownloadName = fileToDownload.FileName;
+                        string localFileName = Path.GetFileName(localFile);
 
-                        DateTime newLastModified = new FileInfo(file).LastWriteTimeUtc;
+                        DateTime fileToDownloadLastModified = fileToDownload.LastModified;
+                        DateTime localLastModified = new FileInfo(localFile).LastWriteTimeUtc;
 
-                        bool lastModifiedChanged = lastModified.ToShortDateString() != newLastModified.ToShortDateString() || lastModified.ToShortTimeString() != newLastModified.ToShortTimeString();
+                        bool lastModifiedChanged = fileToDownloadLastModified.ToShortDateString() != localLastModified.ToShortDateString() || fileToDownloadLastModified.ToShortTimeString() != localLastModified.ToShortTimeString();
 
-                        if((name == Path.GetFileName(file)) && lastModifiedChanged) {
+                        if((fileToDownloadName == localFileName) && lastModifiedChanged) {
                             var fileTrackerVM = new FileTrackerViewModel();
-                            await fileTrackerVM.DeleteFileLocally(name);
-                            await fileTrackerVM.DeleteTorrent(name);
+                            await fileTrackerVM.DeleteFileLocally(fileToDownloadName);
+                            await fileTrackerVM.DeleteTorrent(fileToDownloadName);
 
-                            Torrents.RemoveAt(Torrents.IndexOf(Torrents.Where(t => t.Torrent.Name == name).FirstOrDefault()));
+                            Torrents.RemoveAt(Torrents.IndexOf(Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault()));
 
-                            filesToDownload.Add(f);
+                            filesToDownload.Add(fileToDownload);
 
                             //torrentFilePath = await Utils.CreateFile(f);
                         }
