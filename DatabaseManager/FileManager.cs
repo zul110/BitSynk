@@ -104,14 +104,15 @@ namespace DatabaseManager
             }
         }
 
-        public async Task<bool> AddFileAsync(string fileId, string fileName, string fileHash, long fileSize, DateTime added, DateTime lastModified, string userId, string deviceId, byte[] fileContents, int fileVersion) {
+        public async Task<bool> AddFileAsync(string fileId, string fileName, string fileHash, string fileMD5, long fileSize, DateTime added, DateTime lastModified, string userId, string deviceId, byte[] fileContents, int fileVersion) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_NAME, FILE_HASH, FILE_SIZE, ADDED, LAST_MODIFIED, USER_ID, DEVICE_ID, FILE_CONTENTS, FILE_VERSION) VALUES (@fileId, @fileName, @fileHash, @fileSize, @added, @lastModified, @userId, @deviceId, @fileContents, @fileVersion)", connection);
+                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_NAME, FILE_HASH, FILE_MD5, FILE_SIZE, ADDED, LAST_MODIFIED, USER_ID, DEVICE_ID, FILE_CONTENTS, FILE_VERSION) VALUES (@fileId, @fileName, @fileHash, @fileMD5, @fileSize, @added, @lastModified, @userId, @deviceId, @fileContents, @fileVersion)", connection);
                 insertCommand.Parameters.AddWithValue("@fileId", fileId);
                 insertCommand.Parameters.AddWithValue("@fileName", fileName);
                 insertCommand.Parameters.AddWithValue("@fileHash", fileHash);
+                insertCommand.Parameters.AddWithValue("@fileMD5", fileMD5);
                 insertCommand.Parameters.AddWithValue("@fileSize", fileSize);
                 insertCommand.Parameters.AddWithValue("@added", added);
                 insertCommand.Parameters.AddWithValue("@lastModified", lastModified);
@@ -369,15 +370,17 @@ namespace DatabaseManager
             }
         }
 
-        public async Task<bool> UpdateFile(string fileId, string fileName, string fileHash, long fileSize, DateTime lastModified, string userId, string deviceId, byte[] fileContents, int fileVersion, string newFileHash) {
+        public async Task<bool> UpdateFile(string fileId, string fileName, string fileHash, string fileMD5, long fileSize, DateTime lastModified, string userId, string deviceId, byte[] fileContents, int fileVersion, string newFileHash, string newFileMD5) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand updateCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_HASH, FILE_SIZE, LAST_MODIFIED, FILE_CONTENTS, FILE_VERSION) VALUES (@fileId, @newFileHash, @fileSize, @lastModified, @fileContents, @fileVersion) ON DUPLICATE KEY UPDATE FILE_HASH = @newFileHash, FILE_SIZE = @fileSize, LAST_MODIFIED = @lastModified, FILE_CONTENTS = @fileContents, FILE_VERSION = @fileVersion", connection);
+                MySqlCommand updateCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_HASH, FILE_MD5, FILE_SIZE, LAST_MODIFIED, FILE_CONTENTS, FILE_VERSION) VALUES (@fileId, @newFileHash, @fileMD5, @fileSize, @lastModified, @fileContents, @fileVersion) ON DUPLICATE KEY UPDATE FILE_HASH = @newFileHash, FILE_MD5 = @newFileMD5, FILE_SIZE = @fileSize, LAST_MODIFIED = @lastModified, FILE_CONTENTS = @fileContents, FILE_VERSION = @fileVersion", connection);
                 updateCommand.Parameters.AddWithValue("@fileId", fileId);
                 updateCommand.Parameters.AddWithValue("@fileHash", fileHash);
+                updateCommand.Parameters.AddWithValue("@fileMD5", fileMD5);
                 updateCommand.Parameters.AddWithValue("@userId", userId);
                 updateCommand.Parameters.AddWithValue("@newFileHash", newFileHash);
+                updateCommand.Parameters.AddWithValue("@newFileMD5", newFileMD5);
                 updateCommand.Parameters.AddWithValue("@fileSize", fileSize);
                 updateCommand.Parameters.AddWithValue("@fileContents", fileContents);
                 updateCommand.Parameters.AddWithValue("@fileVersion", fileVersion);
@@ -400,6 +403,7 @@ namespace DatabaseManager
                 string fileHash = reader["FILE_HASH"].ToString();
                 string userId = reader["USER_ID"].ToString();
                 string deviceId = "";
+                string fileMD5 = "";
 
                 int fileVersion = int.Parse(reader["FILE_VERSION"].ToString());
 
@@ -415,6 +419,7 @@ namespace DatabaseManager
                     lastModified = DateTime.Parse(reader["LAST_MODIFIED"].ToString());
                     deviceId = reader["DEVICE_ID"].ToString();
                     fileContents = (byte[])reader["FILE_CONTENTS"];
+                    fileMD5 = reader["FILE_MD5"].ToString();
                 } catch(Exception ex) {
 
                 }
@@ -422,6 +427,7 @@ namespace DatabaseManager
                 file.FileId = fileId;
                 file.FileName = fileName;
                 file.FileHash = fileHash;
+                file.FileMD5 = fileMD5;
                 file.FileSize = fileSize;
                 file.Added = added;
                 file.LastModified = lastModified;
@@ -444,6 +450,7 @@ namespace DatabaseManager
                 string fileHash = reader["FILE_HASH"].ToString();
                 string userId = reader["USER_ID"].ToString();
                 string deviceId = "";
+                string fileMD5 = "";
 
                 int fileVersion = int.Parse(reader["FILE_VERSION"].ToString());
 
@@ -459,6 +466,7 @@ namespace DatabaseManager
                     lastModified = DateTime.Parse(reader["LAST_MODIFIED"].ToString());
                     deviceId = reader["DEVICE_ID"].ToString();
                     fileContents = (byte[])reader["FILE_CONTENTS"];
+                    fileMD5 = reader["FILE_MD5"].ToString();
                 } catch(Exception ex) {
 
                 }
@@ -467,6 +475,7 @@ namespace DatabaseManager
                 file.FileId = fileId;
                 file.FileName = fileName;
                 file.FileHash = fileHash;
+                file.FileMD5 = fileMD5;
                 file.FileSize = fileSize;
                 file.Added = added;
                 file.LastModified = lastModified;

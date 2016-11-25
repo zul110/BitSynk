@@ -308,41 +308,55 @@ namespace BitSynk {
                         DateTime fileToDownloadCreated = fileToDownload.Added;
                         DateTime localCreated = localFileInfo.CreationTimeUtc;
 
-                        bool lastModifiedChanged =
-                            (
-                                localCreated.ToShortDateString() + "_" + localCreated.ToShortTimeString()
-                                !=
-                                localLastModified.ToShortDateString() + "_" + localLastModified.ToShortTimeString()
-                            ) 
-                            && 
-                            (
-                                DateTime.Parse(localLastModified.ToShortDateString()) 
-                                >
-                                DateTime.Parse(fileToDownloadLastModified.ToShortDateString())
-                                ||
-                                (
-                                    (
-                                        DateTime.Parse(localLastModified.ToShortDateString())
-                                        >=
-                                        DateTime.Parse(fileToDownloadLastModified.ToShortDateString())
-                                    )
-                                    &&
-                                    (
-                                        DateTime.Parse(fileToDownloadLastModified.ToShortTimeString()) 
-                                        != 
-                                        DateTime.Parse(localLastModified.ToShortTimeString())
-                                    )
-                                )
-                            );
+                        string localFileCreatedDate = localCreated.ToShortDateString();
+                        string fileToDownloadCreatedDate = localLastModified.ToShortDateString();
 
-                        if((fileToDownloadName == localFileName) && lastModifiedChanged) {
+                        string localFileCreatedTime = localCreated.ToString("HH:mm:ss");
+                        string fileToDownloadCreatedTime = localLastModified.ToString("HH:mm:ss");
+
+                        string localFileModifiedDate = localLastModified.ToShortDateString();
+                        string fileToDownloadModifiedDate = fileToDownloadLastModified.ToShortDateString();
+
+                        string localFileModifiedTime = localLastModified.ToString("HH:mm:ss");
+                        string fileToDownloadModifiedTime = fileToDownloadLastModified.ToString("HH:mm:ss");
+
+                        string localFileMD5 = Utils.GetFileMD5Hash(localFile);
+                        string fileToDownloadMD5 = fileToDownload.FileMD5;
+                        bool fileModified = localFileMD5 != fileToDownloadMD5;
+                            //(
+                            //    localFileCreatedDate + "_" + localFileCreatedTime
+                            //    !=
+                            //    localFileModifiedDate + "_" + localFileModifiedTime
+                            //) 
+                            //&& 
+                            //(
+                            //    DateTime.Parse(localFileModifiedDate) 
+                            //    >
+                            //    DateTime.Parse(fileToDownloadModifiedDate)
+                            //    ||
+                            //    (
+                            //        (
+                            //            DateTime.Parse(localFileModifiedDate)
+                            //            >=
+                            //            DateTime.Parse(fileToDownloadModifiedDate)
+                            //        )
+                            //        &&
+                            //        (
+                            //            DateTime.Parse(fileToDownloadModifiedTime) 
+                            //            != 
+                            //            DateTime.Parse(localFileModifiedTime)
+                            //        )
+                            //    )
+                            //);
+
+                        if((fileToDownloadName == localFileName) && fileModified) {
                             TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault();
                             string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
                             string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
 
-                            //await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1);
+                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(localFile));
 
-                            await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
+                            //await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
 
                             Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
                         }
@@ -370,9 +384,13 @@ namespace BitSynk {
                         DateTime fileToDownloadLastModified = fileToDownload.LastModified;
                         DateTime localLastModified = new FileInfo(localFile).LastWriteTimeUtc;
 
-                        bool lastModifiedChanged = fileToDownloadLastModified.ToShortDateString() != localLastModified.ToShortDateString() || fileToDownloadLastModified.ToShortTimeString() != localLastModified.ToShortTimeString();
+                        //bool lastModifiedChanged = fileToDownloadLastModified.ToShortDateString() != localLastModified.ToShortDateString() || fileToDownloadLastModified.ToShortTimeString() != localLastModified.ToShortTimeString();
 
-                        if((fileToDownloadName == localFileName) && lastModifiedChanged) {
+                        string localFileMD5 = Utils.GetFileMD5Hash(localFile);
+                        string fileToDownloadMD5 = fileToDownload.FileMD5;
+                        bool fileModified = localFileMD5 != fileToDownloadMD5;
+
+                        if((fileToDownloadName == localFileName) && fileModified) {
                             var fileTrackerVM = new FileTrackerViewModel();
                             await fileTrackerVM.DeleteFileLocally(fileToDownloadName);
                             await fileTrackerVM.DeleteTorrent(fileToDownloadName);

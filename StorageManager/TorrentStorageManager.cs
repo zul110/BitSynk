@@ -138,7 +138,7 @@ namespace StorageManager {
             // processed in memory
             c.Create(fileSource, torrentFilePath);// savePath + Path.GetFileNameWithoutExtension(path) + ".torrent");
 
-            AnnounceFileAddition(Path.GetFileName(path), fileHash, await Utils.ReadFileAsync(torrentFilePath));
+            AnnounceFileAddition(Path.GetFileName(path), fileHash, await Utils.ReadFileAsync(torrentFilePath), Utils.GetFileMD5Hash(path));
         }
 
         public string GetTorrentFilePath(string savePath, string path) {
@@ -149,7 +149,7 @@ namespace StorageManager {
             return Path.GetFileNameWithoutExtension(path) + ".torrent";
         }
 
-        public async void AnnounceFileAddition(string fileName, string fileHash, byte[] fileContents, int fileVersion = 0) {
+        public async void AnnounceFileAddition(string fileName, string fileHash, byte[] fileContents, string fileMD5, int fileVersion = 0) {
             FileManager fileService = new FileManager();
 
             FileInfo fileInfo = new FileInfo(fileName);
@@ -157,7 +157,7 @@ namespace StorageManager {
             DateTime added = fileInfo.CreationTimeUtc;
             DateTime lastModified = fileInfo.LastWriteTimeUtc;
 
-            await fileService.AddFileAsync(Guid.NewGuid().ToString(), fileName, fileHash, fileSize, added, lastModified, USER_ID, DEVICE_ID, fileContents, fileVersion);
+            await fileService.AddFileAsync(Guid.NewGuid().ToString(), fileName, fileHash, fileMD5, fileSize, added, lastModified, USER_ID, DEVICE_ID, fileContents, fileVersion);
         }
 
         public void DownloadTorrent(string path, ClientEngine engine) {

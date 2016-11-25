@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -45,6 +46,14 @@ namespace Helpers
             BencodeNET.Objects.TorrentFile torrent = Bencode.DecodeTorrentFile(torrentPath);
             
             return torrent.CalculateInfoHash();
+        }
+
+        public static string GetFileMD5Hash(string filePath) {
+            using(var md5 = MD5.Create()) {
+                using(var stream = File.OpenRead(filePath)) {
+                    return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToUpper();
+                }
+            }
         }
 
         public static string CreateTorrent(string path, string savePath) {

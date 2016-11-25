@@ -79,7 +79,7 @@ namespace ViewModels {
                 DateTime lastModified = fileInfo.LastWriteTimeUtc;
 
                 if(!(await fileManager.GetFileByHashAsync(hash) != null)) {
-                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, fileSize, added, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), fileVersion);
+                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, Utils.GetFileMD5Hash(file), fileSize, added, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), fileVersion);
 
                     knownFiles.Add(hash);
                 }
@@ -88,7 +88,7 @@ namespace ViewModels {
             }
         }
 
-        public async Task UpdateFileInDatabase(string fileId, string file, string hash, string torrentPath, string newFileHash, int fileVersion) {
+        public async Task UpdateFileInDatabase(string fileId, string file, string hash, string fileMD5, string torrentPath, string newFileHash, int fileVersion, string newFileMD5) {
             try {
                 FileManager fileManager = new FileManager();
 
@@ -97,7 +97,7 @@ namespace ViewModels {
                 DateTime lastModified = fileInfo.LastWriteTimeUtc;
 
                 if((await fileManager.GetFileByIdAsync(fileId) != null)) {
-                    await fileManager.UpdateFile(fileId, Path.GetFileName(file), hash, fileSize, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), fileVersion, newFileHash);
+                    await fileManager.UpdateFile(fileId, Path.GetFileName(file), hash, fileMD5, fileSize, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), fileVersion, newFileHash, newFileMD5);
 
                     if(knownFiles != null && knownFiles.Count > 0) {
                         knownFiles[knownFiles.IndexOf(knownFiles.Where(f => f == hash).FirstOrDefault())] = newFileHash;

@@ -9,6 +9,7 @@ namespace Models {
         string fileId;
         string fileName;
         string fileHash;
+        string fileMD5;
         long fileSize;
         DateTime added;
         DateTime lastModified;
@@ -33,6 +34,12 @@ namespace Models {
         {
             get { return fileHash; }
             set { fileHash = value; }
+        }
+
+        public string FileMD5
+        {
+            get { return fileMD5; }
+            set { fileMD5 = value; }
         }
 
         public long FileSize
