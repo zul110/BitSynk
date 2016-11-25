@@ -173,5 +173,9 @@ namespace ViewModels {
 
             return filesToDelete;
         }
+
+        public async Task RenameFileAsync(string oldFileName, string newFileName) {
+            File.Move(Settings.FILES_DIRECTORY + "\\" + oldFileName, Settings.FILES_DIRECTORY + "\\" + newFileName);
+        }
     }
 }

@@ -143,13 +143,16 @@ namespace BitSynk {
 
                     if(Torrents != null && Torrents.Count > 0) {
                         TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == e.Name).FirstOrDefault();
-                        string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
-                        string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(e.FullPath, Settings.FILES_DIRECTORY));
 
-                        await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, e.FullPath, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(e.FullPath));
+                        if(torrent != null) {
+                            string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
+                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(e.FullPath, Settings.FILES_DIRECTORY));
 
-                        //await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
-                        Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, e.FullPath, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(e.FullPath));
+
+                            //await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
+                            Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                        }
                     }
                 }
             }
@@ -165,8 +168,8 @@ namespace BitSynk {
             
         }
 
-        private void Watcher_Renamed(object sender, RenamedEventArgs e) {
-            
+        private async void Watcher_Renamed(object sender, RenamedEventArgs e) {
+            await new FileManager().RenameFileByNameAsync(e.OldName, Settings.USER_ID, e.Name);
         }
 
         private void Timer_Tick(object sender, EventArgs e) {
@@ -310,8 +313,6 @@ namespace BitSynk {
 
                     await RemoveFilesFromQueue(fileManager, fileTrackerVM);
                     
-                    //await CheckForRenamedFiles();
-                    
                     //await CheckForNewFolders();
                     //await RemoveNonExistantFiles(fileTrackerVM);
 
@@ -333,8 +334,20 @@ namespace BitSynk {
             bw.RunWorkerAsync();
         }
 
-        private System.Threading.Tasks.Task CheckForRenamedFiles() {
-            throw new NotImplementedException();
+        private async System.Threading.Tasks.Task CheckForRenamedFiles(FileTrackerViewModel fileTrackerVM) {
+            foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
+                foreach(Models.File fileToDownload in filesToDownload) {
+                    string localFileName = Path.GetFileName(localFile);
+                    string fileToDownloadName = fileToDownload.FileName;
+
+                    bool nameMatch = (localFileName == fileToDownloadName);
+                    bool MD5Match = Utils.GetFileMD5Hash(localFile) == fileToDownload.FileMD5;
+
+                    if(MD5Match && !nameMatch) {
+                        await fileTrackerVM.RenameFileAsync(localFileName, fileToDownloadName);
+                    }
+                }
+            }
         }
 
         private async System.Threading.Tasks.Task CheckForModifiedFiles(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
@@ -356,14 +369,17 @@ namespace BitSynk {
 
                         if((fileToDownloadName == localFileName) && fileModified) {
                             TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault();
-                            string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
-                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
 
-                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(localFile));
+                            if(torrent != null) {
+                                string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
+                                string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
 
-                            //await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
+                                await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(localFile));
 
-                            Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                                //await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
+
+                                Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                            }
                         }
                     }
                 }
@@ -534,6 +550,7 @@ namespace BitSynk {
                 }
             }
 
+            await CheckForNewFiles(fileManager, fileTrackerVM);
             //await CheckForModifiedFiles(fileManager, fileTrackerVM);
         }
 
@@ -541,7 +558,9 @@ namespace BitSynk {
             Torrent torrent = null;
             BEncodedDictionary fastResume = GetFastResumeFile();
 
-            //await fileTrackerVM.CheckForNewFiles();
+            await CheckForRenamedFiles(fileTrackerVM);
+
+            await fileTrackerVM.CheckForNewFiles();
 
             // For each file in the torrents path that is a .torrent file, load it into the engine.
             foreach(string file in Directory.GetFiles(torrentsPath)) {
