@@ -68,7 +68,7 @@ namespace Models {
         public int FileVersion
         {
             get { return fileVersion; }
-            set { FileVersion = fileVersion; }
+            set { fileVersion = value; }
         }
 
         public byte[] FileContents
