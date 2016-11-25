@@ -52,40 +52,6 @@ namespace DatabaseManager
             }
         }
 
-        //public async Task<Device> GetDeviceWithFileAsync(string _fileId) {
-        //    using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
-        //        connection.Open();
-
-        //        MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM DEVICES WHERE FILE_ID = @fileId", connection);
-        //        selectCommand.Parameters.AddWithValue("@fileId", _fileId);
-
-        //        using(MySqlDataReader reader = selectCommand.ExecuteReader()) {
-        //            Device device = null;
-
-        //            while(reader.Read()) {
-        //                device = new Device();
-
-        //                string fileId = reader["FILE_ID"].ToString();
-        //                string fileName = reader["FILE_NAME"].ToString();
-        //                string fileHash = reader["FILE_HASH"].ToString();
-        //                string userId = reader["USER_ID"].ToString();
-        //                string deviceId = reader["DEVICE_ID"].ToString();
-        //                byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
-
-        //                file.FileId = fileId;
-        //                file.FileName = fileName;
-        //                file.FileHash = fileHash;
-        //                file.UserId = userId;
-        //                file.DeviceId = deviceId;
-        //                file.FileContents = fileContents;
-        //                //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
-        //            }
-
-        //            return await new DeviceManager().GetDeviceAsync(file?.DeviceId);
-        //        }
-        //    }
-        //}
-
         public async Task<File> GetFileByIdAsync(string _fileId) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
@@ -138,45 +104,11 @@ namespace DatabaseManager
             }
         }
 
-        //public async Task<User> GetUserWithFileAsync(string _fileId) {
-        //    using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
-        //        connection.Open();
-
-        //        MySqlCommand selectCommand = new MySqlCommand("SELECT * FROM FILES WHERE FILE_ID = @fileId", connection);
-        //        selectCommand.Parameters.AddWithValue("@fileId", _fileId);
-
-        //        using(MySqlDataReader reader = (await selectCommand.ExecuteReaderAsync() as MySqlDataReader)) {
-        //            File file = null;
-
-        //            while(reader.Read()) {
-        //                file = new File();
-
-        //                string fileId = reader["FILE_ID"].ToString();
-        //                string fileName = reader["FILE_NAME"].ToString();
-        //                string fileHash = reader["FILE_HASH"].ToString();
-        //                string userId = reader["USER_ID"].ToString();
-        //                string deviceId = reader["DEVICE_ID"].ToString();
-        //                byte[] fileContents = (byte[])reader["FILE_CONTENTS"];
-
-        //                file.FileId = fileId;
-        //                file.FileName = fileName;
-        //                file.FileHash = fileHash;
-        //                file.UserId = userId;
-        //                file.DeviceId = deviceId;
-        //                file.FileContents = fileContents;
-        //                //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
-        //            }
-
-        //            return await new UserManager().GetUserAsync(file?.UserId);
-        //        }
-        //    }
-        //}
-
-        public async Task<bool> AddFileAsync(string fileId, string fileName, string fileHash, long fileSize, DateTime added, DateTime lastModified, string userId, string deviceId, byte[] fileContents) {
+        public async Task<bool> AddFileAsync(string fileId, string fileName, string fileHash, long fileSize, DateTime added, DateTime lastModified, string userId, string deviceId, byte[] fileContents, int fileVersion) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_NAME, FILE_HASH, FILE_SIZE, ADDED, LAST_MODIFIED, USER_ID, DEVICE_ID, FILE_CONTENTS) VALUES (@fileId, @fileName, @fileHash, @fileSize, @added, @lastModified, @userId, @deviceId, @fileContents)", connection);
+                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_NAME, FILE_HASH, FILE_SIZE, ADDED, LAST_MODIFIED, USER_ID, DEVICE_ID, FILE_CONTENTS, FILE_VERSION) VALUES (@fileId, @fileName, @fileHash, @fileSize, @added, @lastModified, @userId, @deviceId, @fileContents, @fileVersion)", connection);
                 insertCommand.Parameters.AddWithValue("@fileId", fileId);
                 insertCommand.Parameters.AddWithValue("@fileName", fileName);
                 insertCommand.Parameters.AddWithValue("@fileHash", fileHash);
@@ -186,6 +118,7 @@ namespace DatabaseManager
                 insertCommand.Parameters.AddWithValue("@userId", userId);
                 insertCommand.Parameters.AddWithValue("@deviceId", deviceId);
                 insertCommand.Parameters.AddWithValue("@fileContents", fileContents);
+                insertCommand.Parameters.AddWithValue("@fileVersion", fileVersion);
 
                 int result = await insertCommand.ExecuteNonQueryAsync();
 
@@ -340,15 +273,17 @@ namespace DatabaseManager
             string fileId = file.FileId;
             string fileName = file.FileName;
             string fileHash = file.FileHash;
+            int fileVersion = file.FileVersion;
             string userId = file.UserId;
 
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO FILES_TO_REMOVE (FILE_ID, FILE_NAME, FILE_HASH, USER_ID) VALUES (@fileId, @fileName, @fileHash, @userId)", connection);
+                MySqlCommand insertCommand = new MySqlCommand("INSERT INTO FILES_TO_REMOVE (FILE_ID, FILE_NAME, FILE_HASH, FILE_VERSION, USER_ID) VALUES (@fileId, @fileName, @fileHash, @fileVersion, @userId)", connection);
                 insertCommand.Parameters.AddWithValue("@fileId", fileId);
                 insertCommand.Parameters.AddWithValue("@fileName", fileName);
                 insertCommand.Parameters.AddWithValue("@fileHash", fileHash);
+                insertCommand.Parameters.AddWithValue("@fileVersion", fileVersion);
                 insertCommand.Parameters.AddWithValue("@userId", userId);
 
                 int result = await insertCommand.ExecuteNonQueryAsync();
@@ -434,17 +369,18 @@ namespace DatabaseManager
             }
         }
 
-        public async Task<bool> UpdateFile(string fileId, string fileName, string fileHash, long fileSize, DateTime lastModified, string userId, string deviceId, byte[] fileContents, string newFileHash) {
+        public async Task<bool> UpdateFile(string fileId, string fileName, string fileHash, long fileSize, DateTime lastModified, string userId, string deviceId, byte[] fileContents, int fileVersion, string newFileHash) {
             using(MySqlConnection connection = new MySqlConnection(Constants.CONNECTION_STRING)) {
                 connection.Open();
 
-                MySqlCommand updateCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_HASH, FILE_SIZE, LAST_MODIFIED, FILE_CONTENTS) VALUES (@fileId, @newFileHash, @fileSize, @lastModified, @fileContents) ON DUPLICATE KEY UPDATE FILE_HASH = @newFileHash, FILE_SIZE = @fileSize, LAST_MODIFIED = @lastModified, FILE_CONTENTS = @fileContents", connection);
+                MySqlCommand updateCommand = new MySqlCommand("INSERT INTO FILES (FILE_ID, FILE_HASH, FILE_SIZE, LAST_MODIFIED, FILE_CONTENTS, FILE_VERSION) VALUES (@fileId, @newFileHash, @fileSize, @lastModified, @fileContents, @fileVersion) ON DUPLICATE KEY UPDATE FILE_HASH = @newFileHash, FILE_SIZE = @fileSize, LAST_MODIFIED = @lastModified, FILE_CONTENTS = @fileContents, FILE_VERSION = @fileVersion", connection);
                 updateCommand.Parameters.AddWithValue("@fileId", fileId);
                 updateCommand.Parameters.AddWithValue("@fileHash", fileHash);
                 updateCommand.Parameters.AddWithValue("@userId", userId);
                 updateCommand.Parameters.AddWithValue("@newFileHash", newFileHash);
                 updateCommand.Parameters.AddWithValue("@fileSize", fileSize);
                 updateCommand.Parameters.AddWithValue("@fileContents", fileContents);
+                updateCommand.Parameters.AddWithValue("@fileVersion", fileVersion);
                 updateCommand.Parameters.AddWithValue("@lastModified", lastModified);
 
                 int result = await updateCommand.ExecuteNonQueryAsync();
@@ -464,6 +400,8 @@ namespace DatabaseManager
                 string fileHash = reader["FILE_HASH"].ToString();
                 string userId = reader["USER_ID"].ToString();
                 string deviceId = "";
+
+                int fileVersion = int.Parse(reader["FILE_VERSION"].ToString());
 
                 byte[] fileContents = null;
 
@@ -490,6 +428,7 @@ namespace DatabaseManager
                 file.UserId = userId;
                 file.DeviceId = deviceId;
                 file.FileContents = fileContents;
+                file.FileVersion = fileVersion;
                 //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
             }
 
@@ -505,6 +444,8 @@ namespace DatabaseManager
                 string fileHash = reader["FILE_HASH"].ToString();
                 string userId = reader["USER_ID"].ToString();
                 string deviceId = "";
+
+                int fileVersion = int.Parse(reader["FILE_VERSION"].ToString());
 
                 byte[] fileContents = null;
 
@@ -532,6 +473,7 @@ namespace DatabaseManager
                 file.UserId = userId;
                 file.DeviceId = deviceId;
                 file.FileContents = fileContents;
+                file.FileVersion = fileVersion;
                 //user.Devices = new DeviceManager().GetAllDevicesByUser(userId);
 
                 files.Add(file);

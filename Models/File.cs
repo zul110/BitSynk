@@ -14,6 +14,7 @@ namespace Models {
         DateTime lastModified;
         string userId;
         string deviceId;
+        int fileVersion;
         byte[] fileContents;
         
         public string FileId
@@ -62,6 +63,12 @@ namespace Models {
         {
             get { return deviceId; }
             set { deviceId = value; }
+        }
+
+        public int FileVersion
+        {
+            get { return fileVersion; }
+            set { FileVersion = fileVersion; }
         }
 
         public byte[] FileContents

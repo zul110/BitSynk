@@ -323,7 +323,7 @@ namespace BitSynk {
                                 (
                                     (
                                         DateTime.Parse(localLastModified.ToShortDateString())
-                                        >
+                                        >=
                                         DateTime.Parse(fileToDownloadLastModified.ToShortDateString())
                                     )
                                     &&
@@ -340,7 +340,9 @@ namespace BitSynk {
                             string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
                             string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
 
-                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, torrent.Torrent.TorrentPath, newHash);
+                            //await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1);
+
+                            await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
 
                             Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
                         }

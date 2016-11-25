@@ -65,7 +65,7 @@ namespace ViewModels {
             return knownFiles;
         }
 
-        public async Task AddFileToDatabase(string file, string hash, string torrentPath) {
+        public async Task AddFileToDatabase(string file, string hash, string torrentPath, int fileVersion = 0) {
             try {
                 if(!file.Contains(Settings.FILES_DIRECTORY)) {
                     file = Settings.FILES_DIRECTORY + "\\" + file;
@@ -79,7 +79,7 @@ namespace ViewModels {
                 DateTime lastModified = fileInfo.LastWriteTimeUtc;
 
                 if(!(await fileManager.GetFileByHashAsync(hash) != null)) {
-                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, fileSize, added, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath));
+                    await fileManager.AddFileAsync(Guid.NewGuid().ToString(), Path.GetFileName(file), hash, fileSize, added, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), fileVersion);
 
                     knownFiles.Add(hash);
                 }
@@ -88,7 +88,7 @@ namespace ViewModels {
             }
         }
 
-        public async Task UpdateFileInDatabase(string fileId, string file, string hash, string torrentPath, string newFileHash) {
+        public async Task UpdateFileInDatabase(string fileId, string file, string hash, string torrentPath, string newFileHash, int fileVersion) {
             try {
                 FileManager fileManager = new FileManager();
 
@@ -97,7 +97,7 @@ namespace ViewModels {
                 DateTime lastModified = fileInfo.LastWriteTimeUtc;
 
                 if((await fileManager.GetFileByIdAsync(fileId) != null)) {
-                    await fileManager.UpdateFile(fileId, Path.GetFileName(file), hash, fileSize, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), newFileHash);
+                    await fileManager.UpdateFile(fileId, Path.GetFileName(file), hash, fileSize, lastModified, Settings.USER_ID, Settings.DEVICE_ID, await Utils.ReadFileAsync(torrentPath), fileVersion, newFileHash);
 
                     if(knownFiles != null && knownFiles.Count > 0) {
                         knownFiles[knownFiles.IndexOf(knownFiles.Where(f => f == hash).FirstOrDefault())] = newFileHash;
