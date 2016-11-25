@@ -246,9 +246,14 @@ namespace MonoTorrent.Common {
 
         public void Create(ITorrentFileSource fileSource, string savePath)
         {
-            Check.SavePath(savePath);
+            // ZUL: ADDED TRY CATCH
+            try {
+                Check.SavePath(savePath);
 
-            File.WriteAllBytes(savePath, Create(fileSource).Encode());
+                File.WriteAllBytes(savePath, Create(fileSource).Encode());
+            } catch(Exception ex) {
+
+            }
         }
 
         internal BEncodedDictionary Create(string name, List<TorrentFile> files)
