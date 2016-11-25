@@ -323,6 +323,9 @@ namespace BitSynk {
         }
 
         private bool IsFileModified(string localFile, Models.File fileToDownload) {
+            string localFileInfoHash = Utils.GetTorrentInfoHashOfFile(localFile);
+            string torrentFileInfoHash = Utils.GetTorrentInfoHash(Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(localFile) + ".torrent");
+
             FileInfo localFileInfo = new FileInfo(localFile);
 
             string fileToDownloadName = fileToDownload.FileName;
@@ -376,7 +379,7 @@ namespace BitSynk {
                         )
                     );
 
-            return localFileMD5 != fileToDownloadMD5 && lastModifiedChanged;
+            return localFileInfoHash != torrentFileInfoHash; //localFileMD5 != fileToDownloadMD5 && lastModifiedChanged;
         }
 
         private async System.Threading.Tasks.Task DownloadUpdatedFiles() {

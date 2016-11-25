@@ -90,7 +90,7 @@ namespace Helpers
             // to a directory. If the path is a directory, all files will be
             // recursively added
             ITorrentFileSource fileSource = new TorrentFileSource(path);
-
+            
             // Create the torrent file and save it directly to the specified path
             // Different overloads of 'Create' can be used to save the data to a Stream
             // or just return it as a BEncodedDictionary (its native format) so it can be
@@ -105,6 +105,46 @@ namespace Helpers
             return torrentPath; // savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
 
             //AnnounceFileAddition(Path.GetFileName(path), fileHash);
+        }
+
+        public static string GetTorrentInfoHashOfFile(string filePath) {
+            TorrentCreator c = new TorrentCreator();
+
+            RawTrackerTier tier = new RawTrackerTier();
+            //foreach(string tracker in new Trackers().trackers) {
+            //    tier.Add(tracker.Trim());
+            //}
+            //tier.Add("udp://tracker.openbittorrent.com:80/announce");
+            //tier.Add("udp://tracker.publicbt.com:80/announce");
+            //tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
+            //tier.Add("http://" + Utils.GetPublicIPAddress() + ":10000/announce/");//Utils.GetLocalIPAddress() + ":10000");// "http://localhost/announce");
+
+            c.Comment = "BitSynk";
+            c.CreatedBy = "Zul";
+            c.Publisher = "zul";
+
+            // Set the torrent as private so it will not use DHT or peer exchange
+            // Generally you will not want to set this.
+            c.Private = false;
+
+            // Every time a piece has been hashed, this event will fire. It is an
+            // asynchronous event, so you have to handle threading yourself.
+            c.Hashed += delegate (object o, TorrentCreatorEventArgs e) {
+                Console.WriteLine("Current File is {0}% hashed", e.FileCompletion);
+                Console.WriteLine("Overall {0}% hashed", e.OverallCompletion);
+                Console.WriteLine("Total data to hash: {0}", e.OverallSize);
+            };
+
+            // ITorrentFileSource can be implemented to provide the TorrentCreator
+            // with a list of files which will be added to the torrent metadata.
+            // The default implementation takes a path to a single file or a path
+            // to a directory. If the path is a directory, all files will be
+            // recursively added
+            ITorrentFileSource fileSource = new TorrentFileSource(filePath);
+
+            Torrent torrent = Torrent.Load(c.Create(fileSource));
+
+            return torrent.InfoHash.ToString().Replace("-", "");
         }
 
         public static MonoTorrent.BEncoding.BEncodedDictionary GetTorrent(string path, string savePath) {
