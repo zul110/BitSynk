@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ViewModels", "ViewModels\Vi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpers", "Helpers\Helpers.csproj", "{8E4810FD-38B8-4911-9CC7-14D30BCB92BD}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "BitSynkInstaller", "BitSynkInstaller\BitSynkInstaller.vdproj", "{1CB4056D-9314-463D-9961-DCB573BF8072}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -74,6 +76,9 @@ Global
 		{8E4810FD-38B8-4911-9CC7-14D30BCB92BD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8E4810FD-38B8-4911-9CC7-14D30BCB92BD}.Stats|Any CPU.ActiveCfg = Release|Any CPU
 		{8E4810FD-38B8-4911-9CC7-14D30BCB92BD}.Stats|Any CPU.Build.0 = Release|Any CPU
+		{1CB4056D-9314-463D-9961-DCB573BF8072}.Debug|Any CPU.ActiveCfg = Debug
+		{1CB4056D-9314-463D-9961-DCB573BF8072}.Release|Any CPU.ActiveCfg = Release
+		{1CB4056D-9314-463D-9961-DCB573BF8072}.Stats|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
