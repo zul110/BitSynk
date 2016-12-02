@@ -249,17 +249,21 @@ namespace BitSynk {
 
                         // If the torrent does exist
                         if(torrent != null) {
-                            // Get the stored torrent's hash
-                            string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
+                            try {
+                                // Get the stored torrent's hash
+                                string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
 
-                            // Calculate the new modified file's new torrent file's hash (by first creating the torrent file)
-                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(e.FullPath, Settings.FILES_DIRECTORY));
+                                // Calculate the new modified file's new torrent file's hash (by first creating the torrent file)
+                                string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(e.FullPath, Settings.FILES_DIRECTORY));
 
-                            // Update the file in the detabase
-                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, e.FullPath, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(e.FullPath));
+                                // Update the file in the detabase
+                                await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, e.FullPath, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(e.FullPath));
 
-                            // Remove the record of the previous torrent
-                            Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                                // Remove the record of the previous torrent
+                                Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                            } catch(Exception ex) {
+                                // Do nothing...
+                            }
                         }
                     }
                 }
@@ -319,7 +323,7 @@ namespace BitSynk {
         /// 6. In case of an error, restarts the timer
         /// </summary>
         public void Refresh() {
-            if(refreshBw == null) {
+            //if(refreshBw == null) {
                 refreshBw = new BackgroundWorker();
 
                 refreshBw.DoWork += async (s, ev) => {
@@ -343,7 +347,7 @@ namespace BitSynk {
                         refreshTimer.Start();
                     }
                 };
-            }
+            //}
 
             refreshBw.RunWorkerCompleted += (s, ev) => {
                 if(ev.Error != null) {
@@ -423,20 +427,24 @@ namespace BitSynk {
             foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
                 // Get each file in the database (to be downloaded)
                 foreach(Models.File fileToDownload in filesToDownload) {
-                    // Get their names
-                    string localFileName = Path.GetFileName(localFile);
-                    string fileToDownloadName = fileToDownload.FileName;
+                    try {
+                        // Get their names
+                        string localFileName = Path.GetFileName(localFile);
+                        string fileToDownloadName = fileToDownload.FileName;
 
-                    // Check if their names match
-                    bool nameMatch = (localFileName == fileToDownloadName);
+                        // Check if their names match
+                        bool nameMatch = (localFileName == fileToDownloadName);
 
-                    // Check if their MD5 hashes match
-                    bool MD5Match = Utils.GetFileMD5Hash(localFile) == fileToDownload.FileMD5;
+                        // Check if their MD5 hashes match
+                        bool MD5Match = Utils.GetFileMD5Hash(localFile) == fileToDownload.FileMD5;
 
-                    // If a file's MD5 matches, but its name doesn't, it is renamed
-                    // Update its record in the database
-                    if(MD5Match && !nameMatch) {
-                        await fileTrackerVM.RenameFileAsync(localFileName, fileToDownloadName);
+                        // If a file's MD5 matches, but its name doesn't, it is renamed
+                        // Update its record in the database
+                        if(MD5Match && !nameMatch) {
+                            await fileTrackerVM.RenameFileAsync(localFileName, fileToDownloadName);
+                        }
+                    } catch(Exception ex) {
+                        // Do nothing...
                     }
                 }
             }
@@ -468,12 +476,16 @@ namespace BitSynk {
                             TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault();
 
                             if(torrent != null) {
-                                string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
-                                string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
+                                try {
+                                    string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
+                                    string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
 
-                                await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(localFile));
-                                
-                                Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                                    await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(localFile));
+
+                                    Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                                } catch(Exception ex) {
+                                    // Do nothing...
+                                }
                             }
                         }
                     }
@@ -574,39 +586,33 @@ namespace BitSynk {
         /// <returns>Nothing, as it stores the information in the files to download list asynchronously</returns>
         private async System.Threading.Tasks.Task DownloadUpdatedFiles() {
             List<TorrentManager> modifiedFiles = new List<TorrentManager>();
-
-            BEncodedDictionary fastResume = GetFastResumeFile();
-
+            
             foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
                 if(!localFile.Contains(".torrent") && !localFile.Contains("fastresume")) {
                     foreach(Models.File fileToDownload in filesToDownload) {
-                        string fileToDownloadName = fileToDownload.FileName;
-                        string localFileName = Path.GetFileName(localFile);
+                        try {
+                            string fileToDownloadName = fileToDownload.FileName;
+                            string localFileName = Path.GetFileName(localFile);
 
-                        DateTime fileToDownloadLastModified = fileToDownload.LastModified;
-                        DateTime localLastModified = new FileInfo(localFile).LastWriteTimeUtc;
-                        
-                        string localFileMD5 = Utils.GetFileMD5Hash(localFile);
-                        string fileToDownloadMD5 = fileToDownload.FileMD5;
-                        bool fileModified = localFileMD5 != fileToDownloadMD5;
+                            DateTime fileToDownloadLastModified = fileToDownload.LastModified;
+                            DateTime localLastModified = new FileInfo(localFile).LastWriteTimeUtc;
 
-                        if((fileToDownloadName == localFileName) && fileModified) {
-                            var fileTrackerVM = new FileTrackerViewModel();
-                            await fileTrackerVM.DeleteFileLocally(fileToDownloadName);
-                            await fileTrackerVM.DeleteTorrent(fileToDownloadName);
+                            string localFileMD5 = Utils.GetFileMD5Hash(localFile);
+                            string fileToDownloadMD5 = fileToDownload.FileMD5;
+                            bool fileModified = localFileMD5 != fileToDownloadMD5;
 
-                            Torrents.RemoveAt(Torrents.IndexOf(Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault()));
+                            if((fileToDownloadName == localFileName) && fileModified) {
+                                var fileTrackerVM = new FileTrackerViewModel();
+                                await fileTrackerVM.DeleteFileLocally(fileToDownloadName);
+                                await fileTrackerVM.DeleteTorrent(fileToDownloadName);
 
-                            filesToDownload.Add(fileToDownload);
+                                Torrents.RemoveAt(Torrents.IndexOf(Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault()));
+
+                                filesToDownload.Add(fileToDownload);
+                            }
+                        } catch(Exception ex) {
+                            // Do nothing...
                         }
-                    }
-                }
-            }
-
-            if(filesToDownload != null && filesToDownload.Count > 0) {
-                foreach(var file in filesToDownload) {
-                    if(Torrents.Where(t => t.InfoHash.Hash.ToString().Replace("-", "") == file.FileHash).Count() < 1) {
-                        
                     }
                 }
             }

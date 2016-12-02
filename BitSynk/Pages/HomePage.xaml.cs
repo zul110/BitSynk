@@ -68,9 +68,6 @@ namespace BitSynk.Pages {
             client = new Client(await new DeviceViewModel().GetInitialNodes());
             client.OnTorrentsAdded += Client_OnTorrentsAdded;                       // Handler for when torrents are added in the client
             client.OnPeerChanged += Client_OnPeerChanged;                           // Handler for when a peer is changed
-
-            // Startss the client engine
-            InitClient();
         }
 
         /// <summary>
