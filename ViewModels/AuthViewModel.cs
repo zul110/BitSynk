@@ -212,7 +212,7 @@ namespace ViewModels {
         private async Task LinkDevices(User user) {
             try {
                 // If the device update is successful (i.e. if the device already exists, and its user id has changed)
-                if(await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), user.UserId, DateTime.UtcNow)) {
+                if(await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetIPAddress(), user.UserId, DateTime.UtcNow)) {
                     // If there were any files being shared by the user on the current device, WITHOUT linking the device,
                     // change their users to the updated user
                     await new FileManager().ChangeFileUser(user.UserId, Settings.USER_ID);
@@ -228,7 +228,7 @@ namespace ViewModels {
                     Settings.SetValue(Constants.USER_ID, user.UserId);
                 } else {
                     // Add a new device under the current user, if the device update fails
-                    await new DeviceManager().AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), user.UserId, DateTime.UtcNow);
+                    await new DeviceManager().AddDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetIPAddress(), user.UserId, DateTime.UtcNow);
                 }
             } catch(Exception ex) {
                 // In case something goes wrong,

@@ -57,6 +57,15 @@ namespace Helpers {
         }
 
         /// <summary>
+        /// Gets the IP address to use; makes it easier to switch between local or public IP address
+        /// </summary>
+        /// <param name="useLocal">If true, uses the local IP address of the device, else the public address</param>
+        /// <returns>The IP address to use as string</returns>
+        public static string GetIPAddress(bool useLocal = true) {
+            return useLocal ? GetLocalIPAddress() : GetPublicIPAddress();
+        }
+
+        /// <summary>
         /// Returns the magnet link of a torrent
         /// </summary>
         /// <param name="torrentPath">Path of the torrent file</param>

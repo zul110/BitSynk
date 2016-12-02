@@ -46,7 +46,7 @@ namespace ViewModels {
         /// The IP Address, and the date/time are the main fields of interest
         /// </summary>
         public async void HeartBeat() {
-            await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DateTime.UtcNow);
+            await deviceManager.UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetIPAddress(), Settings.USER_ID, DateTime.UtcNow);
         }
 
         /// <summary>

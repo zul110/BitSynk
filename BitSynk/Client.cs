@@ -194,7 +194,7 @@ namespace BitSynk {
             try {
                 BEncodedList details = new BEncodedList();
 
-                initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetPublicIPAddress()), port));
+                initialNodes.Add(new IPEndPoint(IPAddress.Parse(Utils.GetIPAddress()), port));
             } catch {
                 Console.WriteLine("No existing dht nodes could be loaded");
             }
@@ -1009,7 +1009,7 @@ namespace BitSynk {
         /// </summary>
         private static async void shutdown() {
             // Await the device's status, especially the last seen date/time
-            await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DateTime.UtcNow);
+            await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetIPAddress(), Settings.USER_ID, DateTime.UtcNow);
 
             // Get the fast resume file, and update it with the torrents list
             BEncodedDictionary fastResume = new BEncodedDictionary();
