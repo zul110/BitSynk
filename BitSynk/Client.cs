@@ -47,6 +47,8 @@ namespace BitSynk {
 
         private List<RawTrackerTier> trackers;                          // List of trackers (defined, but unused in BitSynk)
 
+        private BackgroundWorker refreshBw;
+
         List<string> files = new List<string>();                        // List of files added to the engine
         List<string> folders = new List<string>();                      // List of folders added to the engine
         List<Models.File> filesToDownload;                              // List of files to be downloaded
@@ -317,37 +319,39 @@ namespace BitSynk {
         /// 6. In case of an error, restarts the timer
         /// </summary>
         public void Refresh() {
-            BackgroundWorker bw = new BackgroundWorker();
+            if(refreshBw == null) {
+                refreshBw = new BackgroundWorker();
 
-            bw.DoWork += async (s, ev) => {
-                try {
-                    refreshTimer.Stop();
-                    
-                    FileManager fileManager = new FileManager();
-                    FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
-                    BEncodedDictionary fastResume = GetFastResumeFile();
+                refreshBw.DoWork += async (s, ev) => {
+                    try {
+                        refreshTimer.Stop();
 
-                    files = new List<string>();
-                    folders = new List<string>();
+                        FileManager fileManager = new FileManager();
+                        FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
+                        BEncodedDictionary fastResume = GetFastResumeFile();
 
-                    await RemoveFilesFromQueue(fileManager, fileTrackerVM);
+                        files = new List<string>();
+                        folders = new List<string>();
 
-                    VerifyTorrents();
-                    StartSyncing();
+                        await RemoveFilesFromQueue(fileManager, fileTrackerVM);
 
-                    UpdateStats();
-                } catch(Exception ex) {
-                    refreshTimer.Start();
-                }
-            };
+                        VerifyTorrents();
+                        StartSyncing();
 
-            bw.RunWorkerCompleted += (s, ev) => {
+                        UpdateStats();
+                    } catch(Exception ex) {
+                        refreshTimer.Start();
+                    }
+                };
+            }
+
+            refreshBw.RunWorkerCompleted += (s, ev) => {
                 if(ev.Error != null) {
 
                 }
             };
 
-            bw.RunWorkerAsync();
+            refreshBw.RunWorkerAsync();
         }
 
         /// <summary>
