@@ -12,7 +12,7 @@
             
             <converters:IntToBoolConverter x:Key="intToBoolConverter" />
             <converters:DoubleFormatConverter x:Key="doubleFormatConverter" />
-            <converters:TorrentStateToBoolConverter x:Key="torrentStateToBoolConverter" />
+            <converters:TorrentExistsToBoolConverter x:Key="torrentExistsToBoolConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

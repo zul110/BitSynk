@@ -6,7 +6,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Helpers {
+    /// <summary>
+    /// Settings accessible to the whole app
+    /// </summary>
     public static class Settings {
+        // The base path, where the application is installed
         private static string BASE_PATH = Environment.CurrentDirectory;
 
         public static string USER_ID;
@@ -23,20 +27,23 @@ namespace Helpers {
 
         public static bool AUTO_ADD = true;
 
-        public static bool FIRST_RUN
-        {
-            get
-            {
+        /// <summary>
+        /// Checks if the app is run for the first time ever on the current device
+        /// </summary>
+        public static bool FIRST_RUN {
+            get {
                 string firstRun = GetValue(Constants.FIRST_RUN);
                 return (firstRun == null || firstRun == "") ? true : bool.Parse(firstRun);
             }
 
-            set
-            {
+            set {
                 SetValue(Constants.FIRST_RUN, value.ToString());
             }
         }
 
+        /// <summary>
+        /// Bootstrap function: Initializes the app on launch
+        /// </summary>
         public static void Bootstrap() {
             SetupDirectories();
 
@@ -47,6 +54,9 @@ namespace Helpers {
             InitDeviceName();
         }
 
+        /// <summary>
+        /// Creates directories if required
+        /// </summary>
         private static void SetupDirectories() {
             FILES_DIRECTORY_NAME = GetValue(Constants.FILES_DIRECTORY_NAME);
             DOWNLOADS_DIRECTORY_NAME = GetValue(Constants.DOWNLOADS_DIRECTORY_NAME);
@@ -67,6 +77,10 @@ namespace Helpers {
             DOWNLOADS_DIRECTORY = Path.Combine(BASE_PATH, DOWNLOADS_DIRECTORY_NAME);
         }
 
+        /// <summary>
+        /// Sets the device name for the session
+        /// If the app is launched for the first time, creates a new name (a GUID for randomness), and makes it persistent
+        /// </summary>
         private static void InitDeviceName() {
             DEVICE_NAME = GetValue(Constants.DEVICE_NAME);
 
@@ -77,6 +91,10 @@ namespace Helpers {
             }
         }
 
+        /// <summary>
+        /// Sets the device id for the session
+        /// If the app is launched for the first time, creates a new id, and makes it persistent
+        /// </summary>
         private static void InitDeviceId() {
             DEVICE_ID = GetValue(Constants.DEVICE_ID);
 
@@ -87,6 +105,10 @@ namespace Helpers {
             }
         }
 
+        /// <summary>
+        /// Sets the user id for the session
+        /// If the app is launched for the first time, creates a new id, and makes it persistent
+        /// </summary>
         private static void InitUserId() {
             USER_ID = GetValue(Constants.USER_ID);
 
@@ -97,15 +119,29 @@ namespace Helpers {
             }
         }
 
+        /// <summary>
+        /// Makes the value persistent
+        /// </summary>
+        /// <param name="key">Key to store the value in</param>
+        /// <param name="value">The value to be stored</param>
         public static void SetValue(string key, string value) {
             Properties.Settings.Default[key] = value;
             Properties.Settings.Default.Save();
         }
 
+        /// <summary>
+        /// Gets a stored value
+        /// </summary>
+        /// <param name="key">The key in which the value is stored</param>
+        /// <returns>The value as string, or null if the key doesn't exist</returns>
         public static string GetValue(string key) {
             return Properties.Settings.Default[key]?.ToString();
         }
 
+        /// <summary>
+        /// Resets a stored value with a system specified default value
+        /// </summary>
+        /// <param name="key">The key that has to be reset</param>
         public static void ResetValue(string key) {
             Properties.Settings.Default[key] = Properties.Settings.Default.Properties[key].DefaultValue;
         }

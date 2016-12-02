@@ -5,6 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Helpers {
+    /// <summary>
+    /// Constants accessible to the whole app
+    /// </summary>
     public static class Constants {
         public const string USER_ID = "USER_ID";
         public const string DEVICE_ID = "DEVICE_ID";

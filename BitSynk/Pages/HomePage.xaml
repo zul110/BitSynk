@@ -61,6 +61,7 @@
                     MinHeight="30"
                     Grid.Column="3"
                     Content="Folder"
+                    IsEnabled="False"
                     Click="addFolderButton_Click"/>
         </Grid>
 
@@ -83,8 +84,7 @@
                   AutoGenerateColumns="False"
                   HorizontalGridLinesBrush="LightGray"
                   VerticalGridLinesBrush="LightGray"
-                  MouseDoubleClick="torrentsDataGrid_MouseDoubleClick"
-                  SelectionChanged="torrentsDataGrid_SelectionChanged">
+                  MouseDoubleClick="torrentsDataGrid_MouseDoubleClick">
             <DataGrid.ContextMenu>
                 <ContextMenu Opened="ContextMenu_Opened">
                     <!--<MenuItem x:Name="pauseMenuItem"
@@ -101,7 +101,7 @@
 
                     <MenuItem x:Name="openMenuItem"
                               Header="Open"
-                              IsEnabled="{Binding SelectedTorrent, Converter={StaticResource torrentStateToBoolConverter}}"
+                              IsEnabled="{Binding SelectedTorrent, Converter={StaticResource torrentExistsToBoolConverter}}"
                               Click="openMenuItem_Click"/>
 
                     <MenuItem x:Name="showInExplorerMenuItem"
@@ -140,8 +140,7 @@
                           ColumnWidth="*"
                           AutoGenerateColumns="False"
                           HorizontalGridLinesBrush="White"
-                          VerticalGridLinesBrush="White"
-                          SelectionChanged="torrentsDataGrid_SelectionChanged">
+                          VerticalGridLinesBrush="White">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Connection URI"
                                             Binding="{Binding ConnectionUri}" />

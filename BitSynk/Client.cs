@@ -25,30 +25,39 @@ using System.Windows;
 using System.Windows.Threading;
 
 namespace BitSynk {
+    /// <summary>
+    /// The core BitSynk Client
+    /// Includes every functionality related to the synchronization process
+    /// </summary>
     public class Client : INotifyPropertyChanged {
+        // Arbitrary port: chosen at random; unused by other common services, to the best of our knowledge
         private int port = 52111;
 
-        private static string dhtNodeFile;
-        private static string basePath;
-        private static string downloadsPath;
-        private static string fastResumeFile;
-        private static string torrentsPath;
-        private static ClientEngine engine;				// The engine used for downloading
+        private static string dhtNodeFile;                              // File containing DHT node data
+        private static string basePath;                                 // Base path for local storage operations
+        private static string downloadsPath;                            // Path where the files are downloaded
+        private static string fastResumeFile;                           // Fast resume file
+        private static string torrentsPath;                             // Path where the torrents are stored
+        private static ClientEngine engine;				                // The MonoTorrent engine used for downloading
         public static ObservableCollection<TorrentManager> torrents;	// The list where all the torrentManagers will be stored that the engine gives us
-        private static Top10Listener listener;			// This is a subclass of TraceListener which remembers the last 20 statements sent to it
+        private static Top10Listener listener;			                // This is a subclass of TraceListener which remembers the last 10 statements sent to it
 
-        private EngineSettings engineSettings;
-        private TorrentSettings torrentDefaults;
+        private EngineSettings engineSettings;                          // Settings for the engine
+        private TorrentSettings torrentDefaults;                        // Default settings
 
-        private List<RawTrackerTier> trackers;
+        private List<RawTrackerTier> trackers;                          // List of trackers (defined, but unused in BitSynk)
 
-        List<string> files = new List<string>();
-        List<string> folders = new List<string>();
-        List<Models.File> filesToDownload;
+        List<string> files = new List<string>();                        // List of files added to the engine
+        List<string> folders = new List<string>();                      // List of folders added to the engine
+        List<Models.File> filesToDownload;                              // List of files to be downloaded
 
+        // Custom BitSynk model of torrents: provides enough information to enable syncing
         public ObservableCollection<Models.BitSynkTorrentModel> bitSynkTorrents = new ObservableCollection<Models.BitSynkTorrentModel>();
-        List<IPEndPoint> initialNodes = new List<IPEndPoint>();
+        List<IPEndPoint> initialNodes = new List<IPEndPoint>();         // Initial DHT nodes
 
+        /// <summary>
+        /// The MonoTorrent Client Engine
+        /// </summary>
         public ClientEngine Engine {
             get {
                 return engine;
@@ -71,8 +80,12 @@ namespace BitSynk {
             }
         }
         
-        private DispatcherTimer timer;
+        // Timer that manages when to refresh the sync information
+        private DispatcherTimer refreshTimer;
 
+        /// <summary>
+        /// Property Changed Event Handler
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
         protected void NotifyPropertyChanged([CallerMemberName] string property = "") {
             if(PropertyChanged != null) {
@@ -80,20 +93,28 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Constructor:
+        /// Initializes the BitSynk client with an initial set of DHT nodes
+        /// Also creates a watcher for the files directory to watch for changes (modifications, additions, removals, and renames)
+        /// </summary>
+        /// <param name="initialNodes">Initial set of known DHT nodes</param>
         public Client(List<IPEndPoint> initialNodes) {
             this.initialNodes = initialNodes;
 
-            timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromSeconds(5);
-            timer.Tick += Timer_Tick;
+            CreateFileWatcher();
+
+            refreshTimer = new DispatcherTimer();
+            refreshTimer.Interval = TimeSpan.FromSeconds(5);
+            refreshTimer.Tick += refreshTimer_Tick;
 
             /* Generate the paths to the folder we will save .torrent files to and where we download files to */
-            basePath = Environment.CurrentDirectory;						// This is the directory we are currently in
-            torrentsPath = Path.Combine(basePath, Settings.FILES_DIRECTORY_NAME);				// This is the directory we will save .torrents to
-            downloadsPath = Path.Combine(basePath, Settings.FILES_DIRECTORY_NAME);			// This is the directory we will save downloads to
+            basePath = Environment.CurrentDirectory;						            // This is the directory we are currently in
+            torrentsPath = Path.Combine(basePath, Settings.FILES_DIRECTORY_NAME);		// This is the directory we will save .torrents to
+            downloadsPath = Path.Combine(basePath, Settings.FILES_DIRECTORY_NAME);		// This is the directory we will save downloads to
             fastResumeFile = Path.Combine(torrentsPath, "fastresume.data");
             dhtNodeFile = Path.Combine(basePath, "DhtNodes");
-            Torrents = new ObservableCollection<TorrentManager>();							// This is where we will store the torrentmanagers
+            Torrents = new ObservableCollection<TorrentManager>();						// This is where we will store the torrentmanagers
             listener = new Top10Listener(10);
 
             // We need to cleanup correctly when the user closes the window by using ctrl-c
@@ -112,70 +133,10 @@ namespace BitSynk {
             InitEngine();
         }
 
-        public void StartEngine() {
-            Engine.DhtEngine.Start(initialNodes);
-
-            CreateFileWatcher();
-
-            timer.Start();
-        }
-
-        private bool fileChanged = true;
-
-        private void CreateFileWatcher() {
-            FileSystemWatcher watcher = new FileSystemWatcher(Settings.FILES_DIRECTORY);
-            watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-
-            watcher.Changed += Watcher_Changed;
-            watcher.Created += Watcher_Created;
-            watcher.Deleted += Watcher_Deleted;
-            watcher.Renamed += Watcher_Renamed;
-
-            watcher.EnableRaisingEvents = true;
-        }
-
-        private async void Watcher_Changed(object sender, FileSystemEventArgs e) {
-            (sender as FileSystemWatcher).EnableRaisingEvents = false;
-
-            if(!e.Name.EndsWith(".torrent") && !e.Name.Contains("fastresume.data")) {
-                if(filesToDownload != null && filesToDownload.Count > 0) {
-                    Models.File fileToDownload = filesToDownload.Where(file => file.FileName == e.Name).FirstOrDefault();
-
-                    if(Torrents != null && Torrents.Count > 0) {
-                        TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == e.Name).FirstOrDefault();
-
-                        if(torrent != null) {
-                            string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
-                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(e.FullPath, Settings.FILES_DIRECTORY));
-
-                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, e.FullPath, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(e.FullPath));
-
-                            //await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
-                            Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
-                        }
-                    }
-                }
-            }
-
-            (sender as FileSystemWatcher).EnableRaisingEvents = true;
-        }
-
-        private void Watcher_Created(object sender, FileSystemEventArgs e) {
-            
-        }
-
-        private void Watcher_Deleted(object sender, FileSystemEventArgs e) {
-            
-        }
-
-        private async void Watcher_Renamed(object sender, RenamedEventArgs e) {
-            await new FileManager().RenameFileByNameAsync(e.OldName, Settings.USER_ID, e.Name);
-        }
-
-        private void Timer_Tick(object sender, EventArgs e) {
-            Refresh();
-        }
-
+        /// <summary>
+        /// Initializes a list of trackers from the Trackers class
+        /// Defined, but not used in BitSynk
+        /// </summary>
         private void InitTrackers() {
             List<string> trackers = new Trackers().trackers;
             this.trackers = new List<RawTrackerTier>();
@@ -189,18 +150,9 @@ namespace BitSynk {
             this.trackers.Add(rawTrackerTier);
         }
 
-        private BEncodedDictionary GetFastResumeFile() {
-            BEncodedDictionary fastResume;
-
-            try {
-                fastResume = BEncodedValue.Decode<BEncodedDictionary>(File.ReadAllBytes(fastResumeFile));
-            } catch {
-                fastResume = new BEncodedDictionary();
-            }
-
-            return fastResume;
-        }
-
+        /// <summary>
+        /// Initializes the engine with default settings
+        /// </summary>
         private void InitEngine() {
             engineSettings = new EngineSettings(downloadsPath, port);
             engineSettings.PreferEncryption = true;
@@ -228,6 +180,9 @@ namespace BitSynk {
             InitDHT();
         }
 
+        /// <summary>
+        /// Initializees the DHT, and registers it with the client engine; adds nodes to the engine
+        /// </summary>
         private void InitDHT() {
             DhtListener dhtListner = new DhtListener(new IPEndPoint(IPAddress.Any, port));
             DhtEngine dht = new DhtEngine(dhtListner);
@@ -245,20 +200,182 @@ namespace BitSynk {
             StartEngine();
         }
 
+        /// <summary>
+        /// Starts the client engine, and starts the sync process (starts the refresh timer)
+        /// </summary>
+        public void StartEngine() {
+            Engine.DhtEngine.Start(initialNodes);
+
+            refreshTimer.Start();
+        }
+
+        /// <summary>
+        /// Enables the file system to watch for and notify the changes in the files directory
+        /// </summary>
+        private void CreateFileWatcher() {
+            FileSystemWatcher watcher = new FileSystemWatcher(Settings.FILES_DIRECTORY);
+            watcher.NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+
+            watcher.Changed += Watcher_Changed;                     // When a change occurs in any of the files or directories
+            watcher.Created += Watcher_Created;                     // When a new file or folder is created
+            watcher.Deleted += Watcher_Deleted;                     // When a file or folder is removed
+            watcher.Renamed += Watcher_Renamed;                     // When a file or folder is renamed
+
+            watcher.EnableRaisingEvents = true;                     // Starts the watcher
+        }
+
+        /// <summary>
+        /// When a file has been modified, its records are updated, and other devices start receiving the latest version of the file
+        /// </summary>
+        /// <param name="sender">FileSystemWatcher</param>
+        /// <param name="e">File system event arguments</param>
+        private async void Watcher_Changed(object sender, FileSystemEventArgs e) {
+            // Disable file system watcher events, as it raises multiple events at once (issue in the .NET implementation)
+            (sender as FileSystemWatcher).EnableRaisingEvents = false;
+
+            // As long as it is not a torrent file, or the fast resume file that gets modified, update the records
+            if(!e.Name.EndsWith(".torrent") && !e.Name.Contains("fastresume.data")) {
+                // If there are files to be downloaded (basically, files in the database)
+                if(filesToDownload != null && filesToDownload.Count > 0) {
+                    // Get the file with the matching name
+                    Models.File fileToDownload = filesToDownload.Where(file => file.FileName == e.Name).FirstOrDefault();
+
+                    // If there are torrents stored
+                    if(Torrents != null && Torrents.Count > 0) {
+                        // Get the matching torrent
+                        TorrentManager torrent = Torrents.Where(t => t.Torrent.Name == e.Name).FirstOrDefault();
+
+                        // If the torrent does exist
+                        if(torrent != null) {
+                            // Get the stored torrent's hash
+                            string hash = torrent.Torrent.InfoHash.ToString().Replace("-", "").ToString();
+
+                            // Calculate the new modified file's new torrent file's hash (by first creating the torrent file)
+                            string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(e.FullPath, Settings.FILES_DIRECTORY));
+
+                            // Update the file in the detabase
+                            await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, e.FullPath, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(e.FullPath));
+
+                            // Remove the record of the previous torrent
+                            Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
+                        }
+                    }
+                }
+            }
+
+            // Enable events again
+            (sender as FileSystemWatcher).EnableRaisingEvents = true;
+        }
+
+        /// <summary>
+        /// When a new file or directory is created, this handler gets triggered
+        /// </summary>
+        /// <param name="sender">FileSystemWatcher</param>
+        /// <param name="e">File system event arguments</param>
+        private void Watcher_Created(object sender, FileSystemEventArgs e) {
+            // Does nothing, as this scenario is taken care of in the refresh method
+        }
+
+        /// <summary>
+        /// When a file or directory is removed, this handler gets triggered
+        /// </summary>
+        /// <param name="sender">FileSystemWatcher</param>
+        /// <param name="e">File system event arguments</param>
+        private void Watcher_Deleted(object sender, FileSystemEventArgs e) {
+            // Does nothing, as this scenario is taken care of in the refresh method
+        }
+
+        /// <summary>
+        /// When a new file or directory is renamed, this handler updates the records in the database
+        /// </summary>
+        /// <param name="sender">FileSystemWatcher</param>
+        /// <param name="e">File system event arguments</param>
+        private async void Watcher_Renamed(object sender, RenamedEventArgs e) {
+            await new FileManager().RenameFileByNameAsync(e.OldName, Settings.USER_ID, e.Name);
+        }
+
+        /// <summary>
+        /// When the refresh timer's interval hits, call the Refresh method
+        /// </summary>
+        /// <param name="sender">Refresh timer</param>
+        /// <param name="e">Empty event arguments</param>
+        private void refreshTimer_Tick(object sender, EventArgs e) {
+            Refresh();
+        }
+
+        /// <summary>
+        /// 1.Re-initializes the file manager, file tracker, and the files and folders lists.
+        /// 2. Triggers the following functions in the background:
+        /// ** a. Removes files to be deleted
+        /// ** b. Gets files to be downloaded from the database
+        /// ** c. Updates modified files
+        /// ** d. Adds new files to the downloads/sync queue
+        /// ** e. Removes files that no longer exist locally, and notifies other devices
+        /// 3. Verifies whether torrents have been added or not; notifies observers of torrents being added
+        /// 4. (Re-)starts the syncing process with the newly formed information
+        /// 5. Updates the status of each torrent
+        /// 6. In case of an error, restarts the timer
+        /// </summary>
+        public void Refresh() {
+            BackgroundWorker bw = new BackgroundWorker();
+
+            bw.DoWork += async (s, ev) => {
+                try {
+                    refreshTimer.Stop();
+                    
+                    FileManager fileManager = new FileManager();
+                    FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
+                    BEncodedDictionary fastResume = GetFastResumeFile();
+
+                    files = new List<string>();
+                    folders = new List<string>();
+
+                    await RemoveFilesFromQueue(fileManager, fileTrackerVM);
+
+                    VerifyTorrents();
+                    StartSyncing();
+
+                    UpdateStats();
+                } catch(Exception ex) {
+                    refreshTimer.Start();
+                }
+            };
+
+            bw.RunWorkerCompleted += (s, ev) => {
+                if(ev.Error != null) {
+
+                }
+            };
+
+            bw.RunWorkerAsync();
+        }
+
+        /// <summary>
+        /// Adds a new file to BitSynk for synching in the background
+        /// </summary>
+        /// <param name="filePath">Path of the new file</param>
+        /// <param name="isFolder">Whether it is a folder or not</param>
         public void AddNewTorrent(string filePath, bool isFolder) {
             BackgroundWorker bw = new BackgroundWorker();
 
             bw.DoWork += async (s, ev) => {
+                // Initializes a new file manager for the new file
                 FileManager fileManager = new FileManager();
 
+                // If it is a removed file, remove it from the remove queue, and add it as a new file
+                // If this step is not done, the file will never be added
                 if(await fileManager.IsRemovedFile(Settings.USER_ID, Path.GetFileName(filePath))) {
                     await fileManager.RemoveFileFromRemoveQueueByNameAsync(Path.GetFileName(filePath), Settings.USER_ID);
                 }
 
+                // Verify whether the new file or folder exists in the files directory
                 string folder = Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(filePath);
                 string file = Settings.FILES_DIRECTORY + "\\" + Path.GetFileName(filePath);
                 bool fileOrFolderExists = isFolder ? Directory.Exists(folder) : File.Exists(file);
 
+                // If it doesn't (it exists elsewhere on the device),
+                // Create it
+                // Else, notify the user that the task already exists
                 if(!fileOrFolderExists) {
                     BEncodedDictionary fastResume = GetFastResumeFile();
                     await CopyFileOrFolderToFilesDirectory(isFolder, filePath);
@@ -276,73 +393,44 @@ namespace BitSynk {
             bw.RunWorkerAsync();
         }
 
+        /// <summary>
+        /// Copies the file or folder to the files directory
+        /// This is done so that the original file does not get affected
+        /// by modifications and/or deletions (especially at this stage of BitSynk)
+        /// Also allows for easier management of the file
+        /// </summary>
+        /// <param name="isFolder">Whether it's a folder</param>
+        /// <param name="filePath">Path of the file or folder</param>
+        /// <returns>The path of the copied file</returns>
         private async Task<string> CopyFileOrFolderToFilesDirectory(bool isFolder, string filePath) {
             string fileCopy = isFolder ? await Utils.CopyFolder(filePath) : await Utils.CopyFile(filePath);
             string torrentFilePath = Utils.CreateTorrent(fileCopy, Settings.FILES_DIRECTORY);
 
-            //if(!fileCopy.Contains(".torrent") && !fileCopy.Contains("fastresume")) {
-                //await new FileTrackerViewModel().AddFileToDatabase(Path.GetFileName(fileCopy), Utils.GetTorrentInfoHash(torrentFilePath), torrentFilePath);
-            //}
-
             return torrentFilePath;
         }
 
-        public void Refresh() {
-            BackgroundWorker bw = new BackgroundWorker();
-
-            bw.DoWork += async (s, ev) => {
-                try {
-                    timer.Stop();
-
-                    // Remove files to be deleted
-                    // Get files to download
-                    // Check for modified files
-                    // Check for renamed files
-                    // Check for new files
-                    // Add new files to downloads/sync queue
-                    // Check for new folders
-                    // Add new folders to downloads/sync queue
-                    // Remove files and folders that do not exist on the device
-                    
-                    FileManager fileManager = new FileManager();
-                    FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
-                    BEncodedDictionary fastResume = GetFastResumeFile();
-
-                    files = new List<string>();
-                    folders = new List<string>();
-
-                    await RemoveFilesFromQueue(fileManager, fileTrackerVM);
-                    
-                    //await CheckForNewFolders();
-                    //await RemoveNonExistantFiles(fileTrackerVM);
-
-                    VerifyTorrents();
-                    StartSyncing();
-
-                    UpdateStats();
-                } catch(Exception ex) {
-                    timer.Start();
-                }
-            };
-
-            bw.RunWorkerCompleted += (s, ev) => {
-                if(ev.Error != null) {
-
-                }
-            };
-
-            bw.RunWorkerAsync();
-        }
-
+        /// <summary>
+        /// Checks for files that are renamed offline
+        /// </summary>
+        /// <param name="fileTrackerVM">The file tracker that is currently being used by the app</param>
+        /// <returns>Nothing, as it is an asynchronous task</returns>
         private async System.Threading.Tasks.Task CheckForRenamedFiles(FileTrackerViewModel fileTrackerVM) {
+            // Get each file in the files directory
             foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
+                // Get each file in the database (to be downloaded)
                 foreach(Models.File fileToDownload in filesToDownload) {
+                    // Get their names
                     string localFileName = Path.GetFileName(localFile);
                     string fileToDownloadName = fileToDownload.FileName;
 
+                    // Check if their names match
                     bool nameMatch = (localFileName == fileToDownloadName);
+
+                    // Check if their MD5 hashes match
                     bool MD5Match = Utils.GetFileMD5Hash(localFile) == fileToDownload.FileMD5;
 
+                    // If a file's MD5 matches, but its name doesn't, it is renamed
+                    // Update its record in the database
                     if(MD5Match && !nameMatch) {
                         await fileTrackerVM.RenameFileAsync(localFileName, fileToDownloadName);
                     }
@@ -350,11 +438,16 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Check for files that are modified offline
+        /// For each file in the folder that exists in the Torrents list:
+        /// If the NAMEs are same, but the HASHes are different, it's a modified file
+        /// Update the database with the modified file's info
+        /// </summary>
+        /// <param name="fileManager">The file manager currently used by the app</param>
+        /// <param name="fileTrackerVM">The file tracker currently being used by the app</param>
+        /// <returns>Nothing, as it is an asynchronous task</returns>
         private async System.Threading.Tasks.Task CheckForModifiedFiles(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
-            // For each file in the folder that exists in the Torrents list:
-            // If the NAMEs are same, but the HASHes are different, it's a modified file
-            // Update the database with the modified file's info
-
             List<TorrentManager> modifiedFiles = new List<TorrentManager>();
 
             foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
@@ -375,9 +468,7 @@ namespace BitSynk {
                                 string newHash = Utils.GetTorrentInfoHash(Utils.CreateTorrent(localFile, Settings.FILES_DIRECTORY));
 
                                 await new FileTrackerViewModel().UpdateFileInDatabase(fileToDownload.FileId, localFile, hash, fileToDownload.FileMD5, torrent.Torrent.TorrentPath, newHash, fileToDownload.FileVersion + 1, Utils.GetFileMD5Hash(localFile));
-
-                                //await new FileTrackerViewModel().AddFileToDatabase(localFileName, newHash, torrent.Torrent.TorrentPath);
-
+                                
                                 Torrents.Remove(Torrents.Where(t => t.Torrent.InfoHash.ToString().Replace("-", "").ToString() == hash).FirstOrDefault());
                             }
                         }
@@ -388,36 +479,58 @@ namespace BitSynk {
             await CheckForNewFiles(fileManager, fileTrackerVM);
         }
 
+        /// <summary>
+        /// Check if a file has been modified
+        /// </summary>
+        /// <param name="localFile">Path of the modified file</param>
+        /// <param name="fileToDownload">File to match with to check if it is modified</param>
+        /// <returns></returns>
         private bool IsFileModified(string localFile, Models.File fileToDownload) {
             string localFileInfoHash = Utils.GetTorrentInfoHashOfFile(localFile);
             string torrentFileInfoHash = Utils.GetTorrentInfoHash(Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(localFile) + ".torrent");
 
-            FileInfo localFileInfo = new FileInfo(localFile);
+            #region OTHER METHODS NOT BEING USED CURRENTLY
+            /*
+             * NOT USED ANYMORE, BUT THIS WAS THE FIRST ALGORITHM DEVELOPED TO DETECT FILE MODIFICATION
+             * STILL EXISTS BECAUSE IT _MIGHT_ BE NEEDED LATER
+             * ALSO, IT TOOK ME A WHILE TO DEVELOP IT, SO I DON'T WANT TO WASTE ALL THAT EFFORT!
+             * 
+             * FileInfo localFileInfo = new FileInfo(localFile);
 
-            string fileToDownloadName = fileToDownload.FileName;
-            string localFileName = Path.GetFileName(localFile);
+             * string fileToDownloadName = fileToDownload.FileName;
+             * string localFileName = Path.GetFileName(localFile);
 
-            DateTime fileToDownloadLastModified = fileToDownload.LastModified;
-            DateTime localLastModified = localFileInfo.LastWriteTimeUtc;
+             * DateTime fileToDownloadLastModified = fileToDownload.LastModified;
+             * DateTime localLastModified = localFileInfo.LastWriteTimeUtc;
 
-            DateTime fileToDownloadCreated = fileToDownload.Added;
-            DateTime localCreated = localFileInfo.CreationTimeUtc;
+             * DateTime fileToDownloadCreated = fileToDownload.Added;
+             * DateTime localCreated = localFileInfo.CreationTimeUtc;
 
-            string localFileCreatedDate = localCreated.ToShortDateString();
-            string fileToDownloadCreatedDate = localLastModified.ToShortDateString();
+             * string localFileCreatedDate = localCreated.ToShortDateString();
+             * string fileToDownloadCreatedDate = localLastModified.ToShortDateString();
 
-            string localFileCreatedTime = localCreated.ToString("HH:mm:ss");
-            string fileToDownloadCreatedTime = localLastModified.ToString("HH:mm:ss");
+             * string localFileCreatedTime = localCreated.ToString("HH:mm:ss");
+             * string fileToDownloadCreatedTime = localLastModified.ToString("HH:mm:ss");
 
-            string localFileModifiedDate = localLastModified.ToShortDateString();
-            string fileToDownloadModifiedDate = fileToDownloadLastModified.ToShortDateString();
+             * string localFileModifiedDate = localLastModified.ToShortDateString();
+             * string fileToDownloadModifiedDate = fileToDownloadLastModified.ToShortDateString();
 
-            string localFileModifiedTime = localLastModified.ToString("HH:mm:ss");
-            string fileToDownloadModifiedTime = fileToDownloadLastModified.ToString("HH:mm:ss");
+             * string localFileModifiedTime = localLastModified.ToString("HH:mm:ss");
+             * string fileToDownloadModifiedTime = fileToDownloadLastModified.ToString("HH:mm:ss");
 
-            string localFileMD5 = Utils.GetFileMD5Hash(localFile);
-            string fileToDownloadMD5 = fileToDownload.FileMD5;
-
+             * string localFileMD5 = Utils.GetFileMD5Hash(localFile);
+             * string fileToDownloadMD5 = fileToDownload.FileMD5;
+             * 
+             * 
+            // If the file's local CREATED date and time DOES NOT equal its MODIFIED date and time,
+            // AND
+            // If the local file's MODIFIED date and time is GREATED (newer) than the file's MODIFIED date and time in the database
+            // ** OR
+            // ** ** If the local file's MODIFIED date is GREATER than, or EQUAL to the file's MODIFIED date in the records
+            // ** ** in the database (same day, or a later day)
+            // ** ** AND
+            // ** ** The local file's MODIFIED time is NOT equal to the file's MODIFIED time in the database,
+            // THEN the file IS MODIFIED (according to its date/time)
             bool lastModifiedChanged =
                     (
                         localFileCreatedDate + "_" + localFileCreatedTime
@@ -444,17 +557,21 @@ namespace BitSynk {
                             )
                         )
                     );
+                    */
+            #endregion
 
-            return localFileInfoHash != torrentFileInfoHash; //localFileMD5 != fileToDownloadMD5 && lastModifiedChanged;
+            // If the file hashes do not match, the file has been modified
+            return localFileInfoHash != torrentFileInfoHash;
         }
 
+        /// <summary>
+        /// Downloads updated files
+        /// </summary>
+        /// <returns>Nothing, as it stores the information in the files to download list asynchronously</returns>
         private async System.Threading.Tasks.Task DownloadUpdatedFiles() {
             List<TorrentManager> modifiedFiles = new List<TorrentManager>();
 
-            Torrent torrent = null;
             BEncodedDictionary fastResume = GetFastResumeFile();
-
-            string torrentFilePath = "";
 
             foreach(string localFile in Directory.GetFiles(Settings.FILES_DIRECTORY)) {
                 if(!localFile.Contains(".torrent") && !localFile.Contains("fastresume")) {
@@ -464,9 +581,7 @@ namespace BitSynk {
 
                         DateTime fileToDownloadLastModified = fileToDownload.LastModified;
                         DateTime localLastModified = new FileInfo(localFile).LastWriteTimeUtc;
-
-                        //bool lastModifiedChanged = fileToDownloadLastModified.ToShortDateString() != localLastModified.ToShortDateString() || fileToDownloadLastModified.ToShortTimeString() != localLastModified.ToShortTimeString();
-
+                        
                         string localFileMD5 = Utils.GetFileMD5Hash(localFile);
                         string fileToDownloadMD5 = fileToDownload.FileMD5;
                         bool fileModified = localFileMD5 != fileToDownloadMD5;
@@ -479,8 +594,6 @@ namespace BitSynk {
                             Torrents.RemoveAt(Torrents.IndexOf(Torrents.Where(t => t.Torrent.Name == fileToDownloadName).FirstOrDefault()));
 
                             filesToDownload.Add(fileToDownload);
-
-                            //torrentFilePath = await Utils.CreateFile(f);
                         }
                     }
                 }
@@ -495,6 +608,12 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Removes files from the file removal queue
+        /// </summary>
+        /// <param name="fileManager">The file manager currently being used by the app</param>
+        /// <param name="fileTrackerVM">The file tracker currently being used by the app</param>
+        /// <returns>Nothing, as the files are removed asynchronously</returns>
         private async System.Threading.Tasks.Task RemoveFilesFromQueue(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
             List<string> filesToDelete = await fileTrackerVM.DeleteFilesInQueue();
 
@@ -507,6 +626,12 @@ namespace BitSynk {
             await DownloadFiles(fileManager, fileTrackerVM);
         }
 
+        /// <summary>
+        /// Downloads files from the database (adds them to the files list)
+        /// </summary>
+        /// <param name="fileManager">The file manager currently being used by the app</param>
+        /// <param name="fileTrackerVM">The file tracker currently being used by the app</param>
+        /// <returns>Nothing, as the files are added to the list asynchronously</returns>
         private async System.Threading.Tasks.Task DownloadFiles(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
             Torrent torrent = null;
             BEncodedDictionary fastResume = GetFastResumeFile();
@@ -551,9 +676,14 @@ namespace BitSynk {
             }
 
             await CheckForNewFiles(fileManager, fileTrackerVM);
-            //await CheckForModifiedFiles(fileManager, fileTrackerVM);
         }
 
+        /// <summary>
+        /// Checks for new files in the database, and adds them to the files list
+        /// </summary>
+        /// <param name="fileManager">The file manager currently being used by the app</param>
+        /// <param name="fileTrackerVM">The file tracker currently being used by the app</param>
+        /// <returns>Nothing, as the files are checked for and added asynchronously</returns>
         private async System.Threading.Tasks.Task CheckForNewFiles(FileManager fileManager, FileTrackerViewModel fileTrackerVM) {
             Torrent torrent = null;
             BEncodedDictionary fastResume = GetFastResumeFile();
@@ -604,6 +734,10 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Checks for new folders
+        /// </summary>
+        /// <returns>Nothing, it's an asynchronous task</returns>
         private async System.Threading.Tasks.Task CheckForNewFolders() {
             foreach(string folder in Directory.GetDirectories(torrentsPath)) {
                 if(!folders.Contains(folder)) {
@@ -612,7 +746,13 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Removes local files that no longer exist on the device: adds them to the file removal queue
+        /// </summary>
+        /// <param name="fileTrackerVM">The file tracker currently being used by the app</param>
+        /// <returns>Nothing, as the files are removed asynchronously</returns>
         private async System.Threading.Tasks.Task RemoveNonExistantFiles(FileTrackerViewModel fileTrackerVM) {
+            // For each torrent, check if it still exists; if it doesn't remove it, and add it to the file removal queue
             for(int i = 0; i < Torrents.Count; i++) {
                 bool hasFile = files.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() > 0;
                 bool hasFolder = folders.Where(f => Torrents[i].SavePath + "\\" + Torrents[i].Torrent.Name == f).Count() > 0;
@@ -632,6 +772,9 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Starts the synchronization process
+        /// </summary>
         private void StartSyncing() {
             // For each torrent manager we loaded and stored in our list, hook into the events
             // in the torrent manager and start the engine.
@@ -676,7 +819,7 @@ namespace BitSynk {
                                 manager.Start();
                             }
                         } catch(Exception ex) {
-
+                            // Do nothing... The method will be hit later on anyways...
                         }
                     }
                 }
@@ -686,6 +829,9 @@ namespace BitSynk {
             Engine.DhtEngine.Start();
         }
 
+        /// <summary>
+        /// Check if torrents exist; if they do, raise the event
+        /// </summary>
         private void VerifyTorrents() {
             if(Torrents.Count == 0) {
                 Console.WriteLine("No new torrents found...");
@@ -694,128 +840,158 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Gets the fast resume file; creates it if it doesn't already exist
+        /// </summary>
+        /// <returns>The fast resume file</returns>
+        private BEncodedDictionary GetFastResumeFile() {
+            BEncodedDictionary fastResume;
+
+            try {
+                fastResume = BEncodedValue.Decode<BEncodedDictionary>(File.ReadAllBytes(fastResumeFile));
+            } catch {
+                fastResume = new BEncodedDictionary();
+            }
+
+            return fastResume;
+        }
+
+        /// <summary>
+        /// Updates the status of the synchronization process in the output window, as well as raises events to update the UI
+        /// </summary>
         private void UpdateStats() {
             // While the torrents are still running, print out some stats to the screen.
             // Details for all the loaded torrent managers are shown.
-            int i = 0;
             bool running = true;
+
             StringBuilder sb = new StringBuilder(1024);
-            //while(running) {
-                //if((i++) % 10 == 0) {
-                    sb.Remove(0, sb.Length);
-                    running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
+            sb.Remove(0, sb.Length);
+            running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
 
-                    AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
-                    AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
-                    AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
-                    AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
-                    AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
-                    AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
-                    AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
+            AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
+            AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
+            AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
+            AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
+            AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
+            AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
+            AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
 
-                    foreach(TorrentManager manager in Torrents) {
-                        Models.BitSynkTorrentModel bitSynkTorrent = bitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
-                        if(bitSynkTorrent == null) {
-                            if(Application.Current != null) {
-                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                    bitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
-                                        Name = manager.Torrent.Name,
-                                        Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
-                                        Progress = manager.Progress,
-                                        State = manager.State.ToString(),
-                                        DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
-                                        UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
-                                    });
+            // Convert each MonoTorrent's torrent information to the BitSynk's torrent model
+            // This will be used to udpate the BitSynk UI
+            foreach(TorrentManager manager in Torrents) {
+                Models.BitSynkTorrentModel bitSynkTorrent = bitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
+                if(bitSynkTorrent == null) {
+                    if(Application.Current != null) {
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                            bitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
+                                Name = manager.Torrent.Name,
+                                Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
+                                Progress = manager.Progress,
+                                State = manager.State.ToString(),
+                                DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
+                                UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
+                            });
 
-                                    bitSynkTorrent = bitSynkTorrents.Last();
-                                }));
-                            }
-                        } else {
-                            if(Application.Current != null) {
-                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                    bitSynkTorrent.Progress = manager.Progress;
-                                    bitSynkTorrent.State = manager.State.ToString();
-                                    bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                    bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-                                }));
-                            }
-                        }
-
-                        PeerChanged();
-
-                        AppendSeperator(sb);
-                        AppendFormat(sb, "State:           {0}", manager.State);
-                        AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
-                        AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-                        AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
-                        AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
-                        AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
-                        AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-                        MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-                        //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-                        AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-                        AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-                        if(manager.PieceManager != null)
-                            AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
-
-                        foreach(PeerId p in manager.GetPeers()) {
-                            Models.BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
-                            if(bitSynkPeer == null) {
-                                if(Application.Current != null) {
-                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                        bitSynkTorrent.BitSynkPeers.Add(new Models.BitSynkPeerModel() {
-                                            ConnectionUri = p.Peer.ConnectionUri,
-                                            DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
-                                            UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
-                                            PiecesCount = p.AmRequestingPiecesCount
-                                        });
-                                    }));
-                                }
-                            } else {
-                                if(Application.Current != null) {
-                                    Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-                                        bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
-                                        bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
-                                        bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
-                                    }));
-                                }
-                            }
-
-                            AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
-                                                                                      p.Monitor.DownloadSpeed / 1024.0,
-                                                                                      p.AmRequestingPiecesCount,
-                                                                                      p.Monitor.UploadSpeed / 1024.0);
-                        }
-
-                        AppendFormat(sb, "", null);
-                        if(manager.Torrent != null)
-                            foreach(TorrentFile file in manager.Torrent.Files)
-                                AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
+                            bitSynkTorrent = bitSynkTorrents.Last();
+                        }));
                     }
-                    //Console.Clear();
-                    Console.WriteLine(sb.ToString());
-                    listener.ExportTo(Console.Out);
-                //}
-
-                if(!timer.IsEnabled) {
-                    timer.Start();
+                } else {
+                    if(Application.Current != null) {
+                        Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                            bitSynkTorrent.Progress = manager.Progress;
+                            bitSynkTorrent.State = manager.State.ToString();
+                            bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+                            bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
+                        }));
+                    }
                 }
 
-                //System.Threading.Thread.Sleep(500);
-            //}
+                PeerChanged();
+
+                AppendSeperator(sb);
+                AppendFormat(sb, "State:           {0}", manager.State);
+                AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
+                AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
+                AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
+                AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
+                AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
+                AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
+                MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
+                AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
+                AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
+                if(manager.PieceManager != null)
+                    AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
+
+                foreach(PeerId p in manager.GetPeers()) {
+                    Models.BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
+                    if(bitSynkPeer == null) {
+                        if(Application.Current != null) {
+                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                bitSynkTorrent.BitSynkPeers.Add(new Models.BitSynkPeerModel() {
+                                    ConnectionUri = p.Peer.ConnectionUri,
+                                    DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
+                                    UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
+                                    PiecesCount = p.AmRequestingPiecesCount
+                                });
+                            }));
+                        }
+                    } else {
+                        if(Application.Current != null) {
+                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                                bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
+                                bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
+                                bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
+                            }));
+                        }
+                    }
+
+                    AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
+                                                                                p.Monitor.DownloadSpeed / 1024.0,
+                                                                                p.AmRequestingPiecesCount,
+                                                                                p.Monitor.UploadSpeed / 1024.0);
+                }
+
+                AppendFormat(sb, "", null);
+                if(manager.Torrent != null)
+                    foreach(TorrentFile file in manager.Torrent.Files)
+                        AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
+            }
+                
+            Console.WriteLine(sb.ToString());
+            listener.ExportTo(Console.Out);
+            
+            if(!refreshTimer.IsEnabled) {
+                refreshTimer.Start();
+            }
         }
 
+        /// <summary>
+        /// Event handler when peers have been found in a torrent
+        /// </summary>
+        /// <param name="sender">Torrent manager</param>
+        /// <param name="e">Peers added event arguments</param>
         static void manager_PeersFound(object sender, PeersAddedEventArgs e) {
             lock(listener)
+                // Update the peers' information on the output window
                 listener.WriteLine(string.Format("Found {0} new peers and {1} existing peers", e.NewPeers, e.ExistingPeers));//throw new Exception("The method or operation is not implemented.");
         }
 
+        /// <summary>
+        /// Adds a separator to the output window
+        /// </summary>
+        /// <param name="sb">String builder</param>
         private static void AppendSeperator(StringBuilder sb) {
             AppendFormat(sb, "", null);
             AppendFormat(sb, "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", null);
             AppendFormat(sb, "", null);
         }
 
+        /// <summary>
+        /// Formats strings to show in the debug output
+        /// </summary>
+        /// <param name="sb">String builder</param>
+        /// <param name="str">String to append</param>
+        /// <param name="formatting">The format</param>
         private static void AppendFormat(StringBuilder sb, string str, params object[] formatting) {
             if(formatting != null)
                 sb.AppendFormat(str, formatting);
@@ -824,9 +1000,14 @@ namespace BitSynk {
             sb.AppendLine();
         }
 
+        /// <summary>
+        /// Tasks to perform when the app is shutting down
+        /// </summary>
         private static async void shutdown() {
+            // Await the device's status, especially the last seen date/time
             await new DeviceManager().UpdateDeviceAsync(Settings.DEVICE_ID, Settings.DEVICE_NAME, Utils.GetPublicIPAddress(), Settings.USER_ID, DateTime.UtcNow);
 
+            // Get the fast resume file, and update it with the torrents list
             BEncodedDictionary fastResume = new BEncodedDictionary();
             for(int i = 0; i < torrents.Count; i++) {
                 torrents[i].Stop();
@@ -839,20 +1020,19 @@ namespace BitSynk {
                 fastResume.Add(torrents[i].Torrent.InfoHash.ToHex(), torrents[i].SaveFastResume().Encode());
             }
 
+            // Save the DHT nodes
             var bnodes = engine.DhtEngine.SaveNodes();
             var nodes = Node.FromCompactNode(bnodes);
-
-            //File.WriteAllBytes(dhtNodeFile, bnodes);
-
             
             string s = "";
             foreach(var node in nodes) {
                 s += node.EndPoint.Address + "\n";
             }
-
-            //File.WriteAllText("nodesString", s);
-
+            
+            // Write the saved information in the fast resume file
             File.WriteAllBytes(fastResumeFile, fastResume.Encode());
+
+            // Dispose the engine, and close all listeners
             engine.Dispose();
 
             foreach(TraceListener lst in Debug.Listeners) {
@@ -860,9 +1040,13 @@ namespace BitSynk {
                 lst.Close();
             }
 
+            // Wait for 2 seconds before finally closing the app; enough time to save everything
             System.Threading.Thread.Sleep(2000);
         }
 
+        /// <summary>
+        /// Raise an event that torrents have been added
+        /// </summary>
         public event EventHandler OnTorrentsAdded;
         private void TorrentsAdded() {
             if(OnTorrentsAdded != null) {
@@ -870,6 +1054,9 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Raise an event that a peer has changed
+        /// </summary>
         public event EventHandler OnPeerChanged;
         private void PeerChanged() {
             if(OnPeerChanged != null) {
@@ -878,111 +1065,3 @@ namespace BitSynk {
         }
     }
 }
-
-
-//    // While the torrents are still running, print out some stats to the screen.
-//    // Details for all the loaded torrent managers are shown.
-//    int i = 0;
-//    bool running = true;
-//    StringBuilder sb = new StringBuilder(1024);
-//        while(running) {
-//            if((i++) % 10 == 0) {
-//                sb.Remove(0, sb.Length);
-//                running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
-
-//                AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
-//                AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
-//                AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
-//                AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
-//                AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
-//                AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
-//                AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
-
-//                foreach(TorrentManager manager in Torrents) {
-//                    BitSynkTorrentModel bitSynkTorrent = BitSynkTorrents?.Where(t => t.Name == manager.Torrent.Name)?.FirstOrDefault();
-//                    if(bitSynkTorrent == null) {
-//                        if(Application.Current != null) {
-//                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-//                                BitSynkTorrents.Add(new Models.BitSynkTorrentModel() {
-//                                    Name = manager.Torrent.Name,
-//                                    Hash = manager.Torrent.InfoHash.ToString().Replace("-", ""),
-//                                    Progress = manager.Progress,
-//                                    State = manager.State.ToString(),
-//                                    DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0,
-//                                    UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0
-//                                });
-//                            }));
-//                        }
-//                    } else {
-//                        if(Application.Current != null) {
-//                            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-//                                bitSynkTorrent.Progress = manager.Progress;
-//                                bitSynkTorrent.State = manager.State.ToString();
-//                                bitSynkTorrent.DownloadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-//                                bitSynkTorrent.UploadSpeed = manager.Monitor.DownloadSpeed / 1024.0;
-//                            }));
-//                        }
-//                    }
-
-//                    PeerChanged();
-
-//                    AppendSeperator(sb);
-//                    AppendFormat(sb, "State:           {0}", manager.State);
-//                    AppendFormat(sb, "Name:            {0}", manager.Torrent == null ? "MetaDataMode" : manager.Torrent.Name);
-//                    AppendFormat(sb, "Progress:           {0:0.00}", manager.Progress);
-//                    AppendFormat(sb, "Download Speed:     {0:0.00} kB/s", manager.Monitor.DownloadSpeed / 1024.0);
-//                    AppendFormat(sb, "Upload Speed:       {0:0.00} kB/s", manager.Monitor.UploadSpeed / 1024.0);
-//                    AppendFormat(sb, "Total Downloaded:   {0:0.00} MB", manager.Monitor.DataBytesDownloaded / (1024.0 * 1024.0));
-//                    AppendFormat(sb, "Total Uploaded:     {0:0.00} MB", manager.Monitor.DataBytesUploaded / (1024.0 * 1024.0));
-//                    MonoTorrent.Client.Tracker.Tracker tracker = manager.TrackerManager.CurrentTracker;
-//                    //AppendFormat(sb, "Tracker Status:     {0}", tracker == null ? "<no tracker>" : tracker.State.ToString());
-//                    AppendFormat(sb, "Warning Message:    {0}", tracker == null ? "<no tracker>" : tracker.WarningMessage);
-//                    AppendFormat(sb, "Failure Message:    {0}", tracker == null ? "<no tracker>" : tracker.FailureMessage);
-//                    if(manager.PieceManager != null)
-//                        AppendFormat(sb, "Current Requests:   {0}", manager.PieceManager.CurrentRequestCount());
-
-//                    foreach(PeerId p in manager.GetPeers()) {
-//                        BitSynkPeerModel bitSynkPeer = bitSynkTorrent?.BitSynkPeers?.Where(peer => peer.ConnectionUri == p.Peer.ConnectionUri)?.FirstOrDefault();
-//                        if(bitSynkPeer == null) {
-//                            if(Application.Current != null) {
-//                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-//                                    bitSynkTorrent.BitSynkPeers.Add(new BitSynkPeerModel() {
-//ConnectionUri = p.Peer.ConnectionUri,
-//                                        DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0,
-//                                        UploadSpeed = p.Monitor.UploadSpeed / 1024.0,
-//                                        PiecesCount = p.AmRequestingPiecesCount
-//                                    });
-//                                }));
-//                            }
-//                        } else {
-//                            if(Application.Current != null) {
-//                                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
-//                                    bitSynkPeer.DownloadSpeed = p.Monitor.DownloadSpeed / 1024.0;
-//                                    bitSynkPeer.UploadSpeed = p.Monitor.UploadSpeed / 1024.0;
-//                                    bitSynkPeer.PiecesCount = p.AmRequestingPiecesCount;
-//                                }));
-//                            }
-//                        }
-
-//                        AppendFormat(sb, "\t{2} - {1:0.00}/{3:0.00}kB/sec - {0}", p.Peer.ConnectionUri,
-//                                                                                  p.Monitor.DownloadSpeed / 1024.0,
-//                                                                                  p.AmRequestingPiecesCount,
-//                                                                                  p.Monitor.UploadSpeed / 1024.0);
-//                    }
-
-//                    AppendFormat(sb, "", null);
-//                    if(manager.Torrent != null)
-//                        foreach(TorrentFile file in manager.Torrent.Files)
-//                            AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
-//                }
-//                //Console.Clear();
-//                Console.WriteLine(sb.ToString());
-//                listener.ExportTo(Console.Out);
-//            }
-
-//            if(!timer.IsEnabled) {
-//                timer.Start();
-//            }
-
-//            System.Threading.Thread.Sleep(500);
-//        }

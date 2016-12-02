@@ -11,9 +11,15 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Helpers
-{
+namespace Helpers {
+    /// <summary>
+    /// Utility methods available to the whole application
+    /// </summary>
     public static class Utils {
+        /// <summary>
+        /// Gets the local IP address of the device as a string
+        /// </summary>
+        /// <returns>Local IP address string</returns>
         public static string GetLocalIPAddress() {
             var host = Dns.GetHostEntry(Dns.GetHostName());
 
@@ -26,6 +32,10 @@ namespace Helpers
             throw new Exception("Local IP Address Not Found!");
         }
 
+        /// <summary>
+        /// Gets the local IP address of the device as returned by .Net
+        /// </summary>
+        /// <returns>Local IP address</returns>
         public static IPAddress GetLocalIPAddressRaw() {
             var host = Dns.GetHostEntry(Dns.GetHostName());
 
@@ -38,16 +48,39 @@ namespace Helpers
             throw new Exception("Local IP Address Not Found!");
         }
 
+        /// <summary>
+        /// Gets the public IP address of the device as a string
+        /// </summary>
+        /// <returns>Public IP address</returns>
+        public static string GetPublicIPAddress() {
+            return new WebClient().DownloadString(new Uri("http://www.canihazip.com/s", UriKind.RelativeOrAbsolute));
+        }
+
+        /// <summary>
+        /// Returns the magnet link of a torrent
+        /// </summary>
+        /// <param name="torrentPath">Path of the torrent file</param>
+        /// <returns>Magnet link</returns>
         public static string GetMagnetLink(string torrentPath) {
             return String.Format("magnet:?xt=urn:btih:{0}&db={1}", GetTorrentInfoHash(torrentPath), Path.GetFileNameWithoutExtension(torrentPath));
         }
 
+        /// <summary>
+        /// Returns the info hash of a torrent file
+        /// </summary>
+        /// <param name="torrentPath">Path of the torrent file</param>
+        /// <returns>Info hash of the torrent file as a string</returns>
         public static string GetTorrentInfoHash(string torrentPath) {
             BencodeNET.Objects.TorrentFile torrent = Bencode.DecodeTorrentFile(torrentPath);
             
             return torrent.CalculateInfoHash();
         }
 
+        /// <summary>
+        /// Returns the MD5 hash of a file
+        /// </summary>
+        /// <param name="filePath">Path of a file</param>
+        /// <returns>MD5 hash of the file as an upper case string</returns>
         public static string GetFileMD5Hash(string filePath) {
             using(var md5 = MD5.Create()) {
                 using(var stream = File.OpenRead(filePath)) {
@@ -56,29 +89,47 @@ namespace Helpers
             }
         }
 
+        /// <summary>
+        /// Creates a torrent file in the path specified
+        /// </summary>
+        /// <param name="path">Path of the file whose torrent file is to be created</param>
+        /// <param name="savePath">Path where the torrent file will be saved</param>
+        /// <returns>Path to the torrent file</returns>
         public static string CreateTorrent(string path, string savePath) {
-            TorrentCreator c = new TorrentCreator();
+            // Initialize the TorrentCreator
+            TorrentCreator creator = new TorrentCreator();
 
-            RawTrackerTier tier = new RawTrackerTier();
-            //foreach(string tracker in new Trackers().trackers) {
-            //    tier.Add(tracker.Trim());
-            //}
-            //tier.Add("udp://tracker.openbittorrent.com:80/announce");
-            //tier.Add("udp://tracker.publicbt.com:80/announce");
-            //tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
-            //tier.Add("http://" + Utils.GetPublicIPAddress() + ":10000/announce/");//Utils.GetLocalIPAddress() + ":10000");// "http://localhost/announce");
+            // Adds trackers to the torrent file
+            // Since the current implementation of BitSynk does not use trackers,
+            // the trackers codes are commented out
+            /* TRACKER CODES
+             * 
+             * RawTrackerTier tier = new RawTrackerTier();
+             * 
+             * foreach(string tracker in new Trackers().trackers) {
+             *     tier.Add(tracker.Trim());
+             * }
 
-            c.Comment = "BitSynk";
-            c.CreatedBy = "Zul";
-            c.Publisher = "zul";
+             * tier.Add("udp://tracker.openbittorrent.com:80/announce");
+             * tier.Add("udp://tracker.publicbt.com:80/announce");
+             * tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
+             * tier.Add("http://" + Utils.GetPublicIPAddress() + ":10000/announce/");//Utils.GetLocalIPAddress() + ":10000");// "http://localhost/announce");
+             * 
+             * creator.Announces.Add(tier);
+            */
+
+            // Additional metadata
+            creator.Comment = "BitSynk";
+            creator.CreatedBy = "Zul";
+            creator.Publisher = "zul";
 
             // Set the torrent as private so it will not use DHT or peer exchange
             // Generally you will not want to set this.
-            c.Private = false;
+            creator.Private = false;
 
             // Every time a piece has been hashed, this event will fire. It is an
             // asynchronous event, so you have to handle threading yourself.
-            c.Hashed += delegate (object o, TorrentCreatorEventArgs e) {
+            creator.Hashed += delegate (object o, TorrentCreatorEventArgs e) {
                 Console.WriteLine("Current File is {0}% hashed", e.FileCompletion);
                 Console.WriteLine("Overall {0}% hashed", e.OverallCompletion);
                 Console.WriteLine("Total data to hash: {0}", e.OverallSize);
@@ -96,101 +147,85 @@ namespace Helpers
             // or just return it as a BEncodedDictionary (its native format) so it can be
             // processed in memory
             string torrentPath = savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
-
+            creator.Create(fileSource, torrentPath);
             
-                c.Create(fileSource, torrentPath); // GetTorrentFilePath(savePath, path));
-                //FileTrackerViewModel.knownFiles.Add(savePath + "\\" + Path.GetFileName(path));
-            
-
-            return torrentPath; // savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
-
-            //AnnounceFileAddition(Path.GetFileName(path), fileHash);
+            return torrentPath;
         }
 
+        /// <summary>
+        /// Gets the torrent info hash of a file without creating a torrent file
+        /// </summary>
+        /// <param name="filePath">Path of the file whose torrent hash is to be calculated</param>
+        /// <returns>The torrent info hash</returns>
         public static string GetTorrentInfoHashOfFile(string filePath) {
-            TorrentCreator c = new TorrentCreator();
-
-            RawTrackerTier tier = new RawTrackerTier();
-            //foreach(string tracker in new Trackers().trackers) {
-            //    tier.Add(tracker.Trim());
-            //}
-            //tier.Add("udp://tracker.openbittorrent.com:80/announce");
-            //tier.Add("udp://tracker.publicbt.com:80/announce");
-            //tier.Add("udp://tracker.ccc.de:80/announce");// "udp://tracker.openbittorrent.com:80");//"udp://tracker.opentrackr.org:1337/announce");//"http://www.torrent-downloads.to:2710/announce");//http://bttrack.9you.com/");//http://opensharing.org:2710/announce");
-            //tier.Add("http://" + Utils.GetPublicIPAddress() + ":10000/announce/");//Utils.GetLocalIPAddress() + ":10000");// "http://localhost/announce");
-
-            c.Comment = "BitSynk";
-            c.CreatedBy = "Zul";
-            c.Publisher = "zul";
-
-            // Set the torrent as private so it will not use DHT or peer exchange
-            // Generally you will not want to set this.
-            c.Private = false;
-
-            // Every time a piece has been hashed, this event will fire. It is an
-            // asynchronous event, so you have to handle threading yourself.
-            c.Hashed += delegate (object o, TorrentCreatorEventArgs e) {
+            TorrentCreator creator = new TorrentCreator();
+            
+            creator.Comment = "BitSynk";
+            creator.CreatedBy = "Zul";
+            creator.Publisher = "zul";
+            creator.Private = false;
+            
+            creator.Hashed += delegate (object o, TorrentCreatorEventArgs e) {
                 Console.WriteLine("Current File is {0}% hashed", e.FileCompletion);
                 Console.WriteLine("Overall {0}% hashed", e.OverallCompletion);
                 Console.WriteLine("Total data to hash: {0}", e.OverallSize);
             };
 
-            // ITorrentFileSource can be implemented to provide the TorrentCreator
-            // with a list of files which will be added to the torrent metadata.
-            // The default implementation takes a path to a single file or a path
-            // to a directory. If the path is a directory, all files will be
-            // recursively added
             ITorrentFileSource fileSource = new TorrentFileSource(filePath);
 
-            Torrent torrent = Torrent.Load(c.Create(fileSource));
+            Torrent torrent = Torrent.Load(creator.Create(fileSource));
 
             return torrent.InfoHash.ToString().Replace("-", "");
         }
 
-        public static MonoTorrent.BEncoding.BEncodedDictionary GetTorrent(string path, string savePath) {
-            TorrentCreator c = new TorrentCreator();
-
-            RawTrackerTier tier = new RawTrackerTier();
-
-            c.Comment = "BitSynk";
-            c.CreatedBy = "Zul";
-            c.Publisher = "zul";
-            c.Private = false;
-            c.Hashed += delegate (object o, TorrentCreatorEventArgs e) {
-                Console.WriteLine("Current File is {0}% hashed", e.FileCompletion);
-                Console.WriteLine("Overall {0}% hashed", e.OverallCompletion);
-                Console.WriteLine("Total data to hash: {0}", e.OverallSize);
-            };
-            
-            ITorrentFileSource fileSource = new TorrentFileSource(path);
-            
-            string torrentPath = savePath + "\\" + Path.GetFileNameWithoutExtension(path) + ".torrent";
-            
-            return c.Create(fileSource);
-        }
-
+        /// <summary>
+        /// Get the path of a torrent of a file
+        /// </summary>
+        /// <param name="savePath">The location where the file is saved</param>
+        /// <param name="path">The path of the file whose torrent is to be found</param>
+        /// <returns>The complete path of the torrent file</returns>
         public static string GetTorrentFilePath(string savePath, string path) {
             return savePath + GetTorrentFileName(path);
         }
 
+        /// <summary>
+        /// Returns the name of the torrent file
+        /// </summary>
+        /// <param name="path">The original file path</param>
+        /// <returns>The name of the torrent file</returns>
         public static string GetTorrentFileName(string path) {
             return Path.GetFileNameWithoutExtension(path) + ".torrent";
         }
 
+        /// <summary>
+        /// Reads the contents of a file asynchronously
+        /// </summary>
+        /// <param name="filePath">The file path</param>
+        /// <returns>Contents of the file in bytes</returns>
         public static async Task<byte[]> ReadFileAsync(string filePath) {
             return File.ReadAllBytes(filePath);
         }
 
+        /// <summary>
+        /// Creates a file, according to the parameters in the BitSynk file model
+        /// </summary>
+        /// <param name="file">BitSynk's custom file model</param>
+        /// <returns>Path of the file created</returns>
         public static async Task<string> CreateFile(Models.File file) {
-            string torrentFilePath = Settings.FILES_DIRECTORY + "\\" + GetTorrentFileName(file.FileName);
+            string filePath = Settings.FILES_DIRECTORY + "\\" + GetTorrentFileName(file.FileName);
 
-            if(!File.Exists(torrentFilePath)) {
-                File.WriteAllBytes(torrentFilePath, file.FileContents);
+            if(!File.Exists(filePath)) {
+                File.WriteAllBytes(filePath, file.FileContents);
             }
 
-            return torrentFilePath;
+            return filePath;
         }
 
+        /// <summary>
+        /// Copies a file to the files directory of BitSynk
+        /// </summary>
+        /// <param name="file">The path or name of the file to be copied</param>
+        /// <returns>Path of the copied file</returns>
         public static async Task<string> CopyFile(string file) {
             string filePath = Settings.FILES_DIRECTORY + "\\" + Path.GetFileName(file);
 
@@ -199,6 +234,11 @@ namespace Helpers
             return filePath;
         }
 
+        /// <summary>
+        /// Copies a folder and its contents to the files directory of BitSynk
+        /// </summary>
+        /// <param name="folder">The path of the folder</param>
+        /// <returns>The path of the copied folder</returns>
         public static async Task<string> CopyFolder(string folder) {
             // Get the subdirectories for the specified directory.
             DirectoryInfo dir = new DirectoryInfo(folder);
@@ -231,10 +271,6 @@ namespace Helpers
             }
 
             return Settings.FILES_DIRECTORY + "\\" + Path.GetFileNameWithoutExtension(folder);
-        }
-
-        public static string GetPublicIPAddress() {
-            return new WebClient().DownloadString(new Uri("http://www.canihazip.com/s", UriKind.RelativeOrAbsolute));
         }
     }
 }

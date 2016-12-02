@@ -5,11 +5,16 @@ using Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace BitSynk {
+    /// <summary>
+    /// Bootstrap singleton class: initializes the application on launch
+    /// </summary>
     public class Bootstrap {
+        /// <summary>
+        /// Readonly instance property of the Bootstrap class
+        /// </summary>
         private static readonly Bootstrap instance = new Bootstrap();
         public static Bootstrap Instance {
             get {
@@ -17,26 +22,42 @@ namespace BitSynk {
             }
         }
 
+        // Declare the 3 managers to be initialized
         private UserManager userManager;
         private DeviceManager deviceManager;
         private FileManager fileManager;
 
+        /// <summary>
+        /// Empty private constructor, to ensure the class cannot be initialized outside
+        /// </summary>
         private Bootstrap() {
             
         }
 
+        /// <summary>
+        /// The bootstrap initializer
+        /// </summary>
         public async void InitBootstrap() {
+            // The bootstrap from the Settings, which initializes the ids and names
             Settings.Bootstrap();
 
+            // Initialize the file tracker view model to create the files directory if it doesn't exist
             FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
 
+            // Registers the new user if it doesn't exist
             await InitUserInfoAsync();
 
+            // Registers or updates the current device
             await InitDeviceInfoAsync();
 
+            // Gets all files owned by the user from the database
             await InitFileInfoAsync();
         }
 
+        /// <summary>
+        /// If the current user does not exist (new user, first launch), register it with the database
+        /// </summary>
+        /// <returns>Nothing as it is an asynchronous task</returns>
         private async Task InitUserInfoAsync() {
             userManager = new UserManager();
 
@@ -45,6 +66,11 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Registers the current device under the user, in case it is a new device,
+        /// or updates the device's information (IP address and the date/time are the main pieces of information)
+        /// </summary>
+        /// <returns>Nothing, as it is an asynchronous task</returns>
         private async Task InitDeviceInfoAsync() {
             deviceManager = new DeviceManager();
 
@@ -55,6 +81,10 @@ namespace BitSynk {
             }
         }
 
+        /// <summary>
+        /// Gets the files owned by the user
+        /// </summary>
+        /// <returns>Nothing, as it is an asynchronous task</returns>
         private async Task InitFileInfoAsync() {
             fileManager = new FileManager();
 

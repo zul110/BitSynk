@@ -73,7 +73,7 @@
     </ApplicationDefinition>
     <Compile Include="Converters\DoubleFormatConverter.cs" />
     <Compile Include="Converters\IntToBoolConverter.cs" />
-    <Compile Include="Converters\TorrentStateToBoolConverter.cs" />
+    <Compile Include="Converters\TorrentExistsToBoolConverter.cs" />
     <Compile Include="Pages\BasePage.cs" />
     <Compile Include="Pages\HomePage.xaml.cs">
       <DependentUpon>HomePage.xaml</DependentUpon>
@@ -160,10 +160,6 @@
     <ProjectReference Include="..\MonoTorrent\MonoTorrent.csproj">
       <Project>{411a9e0e-fdc6-4e25-828a-0c2cd1cd96f8}</Project>
       <Name>MonoTorrent</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\StorageManager\StorageManager.csproj">
-      <Project>{579eb5d3-e3e8-422a-bfd5-4020f97c8568}</Project>
-      <Name>StorageManager</Name>
     </ProjectReference>
     <ProjectReference Include="..\ViewModels\ViewModels.csproj">
       <Project>{c084fe28-929a-49fd-9ef7-451576ce751f}</Project>
