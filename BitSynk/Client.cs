@@ -81,7 +81,18 @@ namespace BitSynk {
                 NotifyPropertyChanged();
             }
         }
-        
+
+        private string syncInformation;
+        public string SyncInformation {
+            get { return syncInformation; }
+            set {
+                syncInformation = value;
+                NotifyPropertyChanged();
+                InfoUpdate();
+            }
+        }
+
+
         // Timer that manages when to refresh the sync information
         private DispatcherTimer refreshTimer;
 
@@ -323,31 +334,29 @@ namespace BitSynk {
         /// 6. In case of an error, restarts the timer
         /// </summary>
         public void Refresh() {
-            //if(refreshBw == null) {
-                refreshBw = new BackgroundWorker();
+            refreshBw = new BackgroundWorker();
 
-                refreshBw.DoWork += async (s, ev) => {
-                    try {
-                        refreshTimer.Stop();
+            refreshBw.DoWork += async (s, ev) => {
+                try {
+                    refreshTimer.Stop();
 
-                        FileManager fileManager = new FileManager();
-                        FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
-                        BEncodedDictionary fastResume = GetFastResumeFile();
+                    FileManager fileManager = new FileManager();
+                    FileTrackerViewModel fileTrackerVM = new FileTrackerViewModel();
+                    BEncodedDictionary fastResume = GetFastResumeFile();
 
-                        files = new List<string>();
-                        folders = new List<string>();
+                    files = new List<string>();
+                    folders = new List<string>();
 
-                        await RemoveFilesFromQueue(fileManager, fileTrackerVM);
+                    await RemoveFilesFromQueue(fileManager, fileTrackerVM);
 
-                        VerifyTorrents();
-                        StartSyncing();
+                    VerifyTorrents();
+                    StartSyncing();
 
-                        UpdateStats();
-                    } catch(Exception ex) {
-                        refreshTimer.Start();
-                    }
-                };
-            //}
+                    UpdateStats();
+                } catch(Exception ex) {
+                    refreshTimer.Start();
+                }
+            };
 
             refreshBw.RunWorkerCompleted += (s, ev) => {
                 if(ev.Error != null) {
@@ -874,17 +883,27 @@ namespace BitSynk {
             // Details for all the loaded torrent managers are shown.
             bool running = true;
 
+            string tempInfo = "";
+
             StringBuilder sb = new StringBuilder(1024);
             sb.Remove(0, sb.Length);
             running = Torrents.ToList().Exists(delegate (TorrentManager m) { return m.State != TorrentState.Stopped; });
 
-            AppendFormat(sb, "Total Download Rate: {0:0.00}kB/sec", Engine.TotalDownloadSpeed / 1024.0);
-            AppendFormat(sb, "Total Upload Rate:   {0:0.00}kB/sec", Engine.TotalUploadSpeed / 1024.0);
-            AppendFormat(sb, "Disk Read Rate:      {0:0.00} kB/s", Engine.DiskManager.ReadRate / 1024.0);
-            AppendFormat(sb, "Disk Write Rate:     {0:0.00} kB/s", Engine.DiskManager.WriteRate / 1024.0);
-            AppendFormat(sb, "Total Read:         {0:0.00} kB", Engine.DiskManager.TotalRead / 1024.0);
-            AppendFormat(sb, "Total Written:      {0:0.00} kB", Engine.DiskManager.TotalWritten / 1024.0);
-            AppendFormat(sb, "Open Connections:    {0}", Engine.ConnectionManager.OpenConnections);
+            tempInfo += String.Format("Total Download Rate: {0:0.00}kB/sec\n", Engine.TotalDownloadSpeed / 1024.0);
+            tempInfo += String.Format("Total Upload Rate:   {0:0.00}kB/sec\n", Engine.TotalUploadSpeed / 1024.0);
+            tempInfo += String.Format("Disk Read Rate:      {0:0.00} kB/s\n", Engine.DiskManager.ReadRate / 1024.0);
+            tempInfo += String.Format("Disk Write Rate:     {0:0.00} kB/s\n", Engine.DiskManager.WriteRate / 1024.0);
+            tempInfo += String.Format("Total Read:         {0:0.00} kB\n", Engine.DiskManager.TotalRead / 1024.0);
+            tempInfo += String.Format("Total Written:      {0:0.00} kB\n", Engine.DiskManager.TotalWritten / 1024.0);
+            tempInfo += String.Format("Open Connections:    {0}\n", Engine.ConnectionManager.OpenConnections);
+
+            AppendFormat(sb, tempInfo);
+
+            if(Application.Current != null) {
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Normal, new Action(() => {
+                    SyncInformation = tempInfo;
+                }));
+            }
 
             // Convert each MonoTorrent's torrent information to the BitSynk's torrent model
             // This will be used to udpate the BitSynk UI
@@ -966,8 +985,10 @@ namespace BitSynk {
                     foreach(TorrentFile file in manager.Torrent.Files)
                         AppendFormat(sb, "{1:0.00}% - {0}", file.Path, file.BitField.PercentComplete);
             }
-                
-            Console.WriteLine(sb.ToString());
+
+            string info = sb.ToString();
+
+            Console.WriteLine(info);
             listener.ExportTo(Console.Out);
             
             if(!refreshTimer.IsEnabled) {
@@ -1071,6 +1092,16 @@ namespace BitSynk {
         private void PeerChanged() {
             if(OnPeerChanged != null) {
                 OnPeerChanged(this, new EventArgs());
+            }
+        }
+
+        /// <summary>
+        /// Raise on information update
+        /// </summary>
+        public event EventHandler OnInfoUpdate;
+        private void InfoUpdate() {
+            if(OnInfoUpdate != null) {
+                OnInfoUpdate(this, new EventArgs());
             }
         }
     }

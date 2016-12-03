@@ -68,6 +68,7 @@ namespace BitSynk.Pages {
             client = new Client(await new DeviceViewModel().GetInitialNodes());
             client.OnTorrentsAdded += Client_OnTorrentsAdded;                       // Handler for when torrents are added in the client
             client.OnPeerChanged += Client_OnPeerChanged;                           // Handler for when a peer is changed
+            client.OnInfoUpdate += Client_OnInfoUpdate;                             // Handler for when sync information changes
         }
 
         /// <summary>
@@ -99,6 +100,15 @@ namespace BitSynk.Pages {
 
             // Run the background worker
             bw.RunWorkerAsync();
+        }
+
+        /// <summary>
+        /// Updates the info text block on each synchronization information update
+        /// </summary>
+        /// <param name="sender">BitSynk client</param>
+        /// <param name="e">Empty event arguments</param>
+        private void Client_OnInfoUpdate(object sender, EventArgs e) {
+            infoBlock.Text = (sender as Client).SyncInformation;
         }
 
         /// <summary>

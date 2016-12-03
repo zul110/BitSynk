@@ -131,8 +131,9 @@
         <TabControl Grid.Row="2"
                     Grid.ColumnSpan="2">
 
-            <TabItem Header="Files">
-                
+            <TabItem Header="Info">
+                <TextBlock x:Name="infoBlock"
+                           IsEnabled="False" />
             </TabItem>
 
             <TabItem Header="Peers">
@@ -152,6 +153,11 @@
                                             Binding="{Binding UploadSpeed, Converter={StaticResource doubleFormatConverter}}" />
                     </DataGrid.Columns>
                 </DataGrid>
+            </TabItem>
+
+            <TabItem Header="Files"
+                     IsEnabled="False">
+                
             </TabItem>
 
         </TabControl>
